@@ -4,43 +4,49 @@ using System.Numerics;
 
 namespace SKCharts
 {
-    static unsafe class SKFunctions
+    static unsafe class Sk
     {
         const string libname = "SkiaSharp.so";
 
         [DllImport(libname)]
-        static void sk_canvas_draw_vertices(SKCanvas canvas, const sk_vertices_t* vertices, sk_blendmode_t mode, const sk_paint_t* paint);
+        static extern void sk_canvas_draw_vertices(SKCanvas canvas, const sk_vertices_t* vertices, sk_blendmode_t mode, const sk_paint_t* paint);
 
         [DllImport(libname)]
-        static sk_vertices_t* sk_vertices_make_copy(sk_vertices_vertex_mode_t vmode, int vertexCount, const sk_point_t* positions, const sk_point_t* texs, const sk_color_t* colors, int indexCount, const uint16_t* indices);
+        static extern sk_vertices_t* sk_vertices_make_copy(sk_vertices_vertex_mode_t vmode, int vertexCount, const sk_point_t* positions, const sk_point_t* texs, const sk_color_t* colors, int indexCount, const uint16_t* indices);
 
         [DllImport(libname)]
-        static void sk_vertices_unref(sk_vertices_t* cvertices);
+        static extern void sk_vertices_unref(sk_vertices_t* cvertices);
 
         [DllImport(libname)]
-        static void sk_vertices_ref(sk_vertices_t* cvertices);
+        static extern void sk_vertices_ref(sk_vertices_t* cvertices);
 
+        [DllImport(libname)]
+        static extern void sk_canvas_flush(SKCanvas canvas);
 
-        public static void DrawPoints(this SKCanvas canvas, )
+        public static void canvas_drawPoints(SKCanvas canvas, )
         {
             
         }
 
-        public static void DrawLines(this SKCanvas canvas, )
+        public static void canvas_drawLines(SKCanvas canvas, )
         {
             
         }
 
-        public static void DrawVertices(this SKCanvas canvas, SKVertexMode mode, Span<SKPoint> positions, Span<SKPoint>? textures, Span<SKColor> colors, Span<ushort> indices)
+        public static void canvas_drawVertices(SKCanvas canvas, SKVertexMode mode, Span<SKPoint> positions, Span<SKPoint>? textures, Span<SKColor> colors, Span<ushort> indices)
         {
             var _textures = (textures.HasValue) ? textures.Value : null; 
             var vertices = sk_vertices_make_copy((int)mode, positions.Lenght, positions, _textures, colors, indices);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SKPoint ToSKPoint(this Vector3 pt)
+        public static void canvas_drawText(SKCanvas canvas, )
         {
-            return new SKPoint(pt.X, ptt.Y);
+            
+        }
+
+        public static void canvas_flush(SKCanvas canvas)
+        {
+            sk_canvas_flush(canvas);
         }
     }
 
@@ -49,16 +55,13 @@ namespace SKCharts
     public class Chart3D
     {
         #region fields
-        Bounds3D? bounds;
         Matrix3x3 transform;
-        Matrix3x3 projection;
-            
+        Matrix3x3 projection;            
         const int MAX_SIZE = 100_000;
         SKPoint[] points_buffer = new SKPoint[MAX_SIZE];
         ushort[] indices_buffer = new ushort[MAX_SIZE];
         SKColor[] colors_buffer = new SKColor[MAX_SIZE];
         
-        bool update = true;
         bool xgrid = true;
         bool ygrid = true;
         bool zgrid = true;
@@ -72,6 +75,9 @@ namespace SKCharts
         SKPaint labels_paint;
         SKPaint title_paint;
         SKPaint colorbar_paint;
+        
+        internal Bounds3D? bounds;
+        internal bool update = true;
         
         public Chart3D()
         {
@@ -96,15 +102,13 @@ namespace SKCharts
         #region methods
         public Chart3D AddModel3D(Model3D model)
         {
-            var model_bounds = Bounds3D.GetBounds(model.Data);
-            this.bounds = Bounds3D.GetBounds(bounds, model_bounds);
-    
+            bounds = Bounds3D.GetBounds(this.bounds, model.Bounds);
             models.Add(model);
     
             return this;
         } 
     
-        void DrawGridlines()
+        void DrawGridlines(SKCanvas canvas)
         {
             var pts = points_buffer;
             int i = 0;
@@ -144,11 +148,11 @@ namespace SKCharts
                 }
             }
 
-            canvas.DrawLines(pts.AsSpan(0, i), null, gridlines_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(pts.AsSpan(0, i), null, gridlines_paint);    // draw vertices as lines
         }
 
     
-        void DrawAxes()
+        void DrawAxes(SKCanvas canvas)
         {            
             var pt0 = new Vector3(bounds.Xmin, bounds.Ymin, bounds.Zmin);   // get the 4 vectors of the space O, X, Y, Z
             var ptX = new Vector3(bounds.Xmax, bounds.Ymin, bounds.Zmin);
@@ -163,56 +167,66 @@ namespace SKCharts
             pts[4] = (pt0 * transform * projection).ToSKPoint();
             pts[5] = (ptZ * transform * projection).ToSKPoint();
             
-            canvas.DrawLines(pts.AsSpan(0, 6), null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(pts.AsSpan(0, 6), null, axes_paint);    // draw vertices as lines
         }
     
-        void DrawTicks()
+        void DrawTicks(SKCanvas canvas)
         {    
             var pts = points_buffer;
+            var label_buffer = stackalloc char[64];              // buffer to write on labels...
+            double offset_X = (bouds.Ymax - bound.Ymin) / 10.0;  
+            double offset_Y = (bounds.Xmax - bounds.Xmin) / 10.0;
+            
             int i = 0;
             // draw X ticks
             {
-                double offset = (bouds.Ymax - bound.Ymin) / 10.0;  
                 for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx, i += 2)
                 {
                     var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin - offset, bounds.Zmin);                    
+                    var pt1 = new Vector3(x, bounds.Ymin - offset_X, bounds.Zmin);                    
+                    var pt2 = new Vector3(x - dx/2.0, bounds.Ymin - offset_X, bounds.Zmin);
     
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
-                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint();                          
+                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint()
+
+                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
                 }                
             }
-            // draw X ticks
-            {
-                double offset = (bouds.Ymax - bound.Ymin) / 10.0;  
-                for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx, i += 2)
+            // draw Y ticks
+            {                
+                for(double y = bounds.Ymin + dy; y < bounds.Ymax; y += dy, i += 2)
                 {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin - offset, bounds.Zmin);                    
+                    var pt0 = new Vector3(bounds.Xmin, y, bounds.Zmin);
+                    var pt1 = new Vector3(bounds.Xmin - offset_Y, y, bounds.Zmin);                    
+                    var pt2 = new Vector3(bounds.Xmin - offset_Y, y - dy/2.0, bounds.Zmin);                    
     
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
-                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint();                          
+                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint();      
+
+                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
                 }                
             }   
-            // draw X ticks
-            {
-                double offset = (bouds.Ymax - bound.Ymin) / 10.0;  
-                for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx, i += 2)
+            // draw Z ticks
+            {                
+                for(double z = bounds.Zmin + dz; z < bounds.Zmax; z += dz, i += 2)
                 {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin - offset, bounds.Zmin);                    
-    
+                    var pt0 = new Vector3(bounds.Xmin, bounds.Ymin, z);
+                    var pt1 = new Vector3(bounds.Xmin - offset_X, bounds.Ymin - offset_Y, z);
+                    var pt2 = new Vector3(bounds.Xmin - offset_X, bounds.Ymin - offset_Y, z - dz/2.0);
+                        
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt0 * transform * projection).ToSKPoint();                          
+
+                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);
                 }                
             }
 
-            canvas.DrawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
         }
 
 
         #region draw_models
-        void DrawSurface(Model3D model)
+        void DrawSurface(SKCanvas canvas, Model3D model)
         {   
             var pts = model.data;
             var colormap = model.Colormap;
@@ -263,7 +277,7 @@ namespace SKCharts
             }
         }
 
-        void DrawLine3D(ReadOnlySpan<Vecor3> data)
+        void DrawLine3D(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
             var pts = points_buffer;
             for(int i = 0; 0 < data.Length; i += 1)
@@ -271,10 +285,10 @@ namespace SKCharts
                 pts[i] = (data[i] * transform * projection).ToSKPoint();
             }
             
-            canvas.DrawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines            c
+            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines            c
         }
         
-        void DrawPoints()
+        void DrawPoints(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
             var pts = points_buffer;
             for(int i = 0; 0 < data.Length; i += 1)
@@ -282,30 +296,37 @@ namespace SKCharts
                 pts[i] = (data[i] * transform * projection).ToSKPoint();
             }
             
-            canvas.DrawPoints(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines        
+            Sk.canvas_drawPoints(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines        
         }
         #endregion
                  
     
-        void DrawModels()
+        void DrawModels(SKCanvas canvas)
         {          
             foreach(var model in models)
             {        
                 switch(model.Mode)
                 {
-                    case Model3DMode.Line: DrawLine3D(model.Data); break;
-                    case Model3DMode.Points: DrawPoints(model.Data); break;
-                    case Model3DMode.Surface: DrawSurface(model.Data); break;
+                    case Model3DMode.Line: DrawLine3D(canvas, model.Data); break;
+                    case Model3DMode.Points: DrawPoints(canvas, model.Data); break;
+                    case Model3DMode.Surface: DrawSurface(canvas, model.Data); break;
                 } 
             }
         }
 
-        void DrawTitle()
+        void DrawTitle(SKCanvas canvas)
         {
+            if(Title == null) return;
             
+            var x = (bounds.Xmax - bounds.Xmin) / 2.0;
+            var y = (bounds.Ymax - bounds.Ymin) / 2.0;
+            var z = (bounds.Zmax - bounds.Zmin) / 2.0;
+            var title_position = new Vector3(x, y, z);
+
+            Sk.canvas_drawText(Title, (SKPoint)title_position, title_paint);
         }
 
-        void DrawColorbar()
+        void DrawColorbar(SKCanvas canvas)
         {
             colorbar.Draw(canvas, colorbar_paint);
         }
@@ -316,15 +337,27 @@ namespace SKCharts
 
             canvas.Clear(SKColors.White);
         
-            DrawGridlines();
-            DrawAxes();
-            DrawTicks();
-            DrawModels();
-            DrawTitle();
-            DrawColorbar();
+            DrawGridlines(canvas);
+            DrawAxes(canvas);
+            DrawTicks(canvas);
+            DrawModels(canvas);
+            DrawTitle(canvas);
+            DrawColorbar(canvas);
+            sk_canvas_flush(canvas);
 
             update = false;
+        }       
+
+        SKPoint ToSK(Vector3 vec)
+        {
+            var pt = vec * transform * projection;
+
+            return new SKPoint(pt.X, pt.Y);
         }
+        #endregion
+
+        #region exports
+        
         #endregion
 
         #region properties
@@ -333,6 +366,12 @@ namespace SKCharts
         public string? YLabel { get; set; }
         public string? ZLabel { get; set; }
     
+        public SKPaint PaintGridlines => gridlines_paint;
+        public SKPaint PaintAxes      => axes_paint;
+        public SKPaint PaintLabels    => labels_paint;
+        public SKPaint PaintTitle     => title_paint;
+        public SKPaint PaintColorbar  => colorbar_paint;
+
         public Matrix3x3 Transform
         {
             get => transform;
@@ -351,18 +390,6 @@ namespace SKCharts
                 projection = value;
                 update = true;            
             }
-        }
-    
-        public float LabelsFontSize
-        {
-            get => labels_paint.Stroke;
-            set => labels_paint.Stroke = value;
-        }
-
-        public SKColor LabelsColor
-        {
-            get => labels_paint.Color;
-            set => labels_paint.Colo - value;
         }
         #endregion
     }
