@@ -1,4 +1,5 @@
-
+using System;
+using System.Runtime.CompilerServices;
 
 namespace SKCharts
 {
@@ -80,6 +81,24 @@ namespace SKCharts
             if(zvalue > Zmax || zvalue < Zmin) throw new ArgumentException("zvalue not in [Zmin, Zmax]");
             
             return (zvalue - Zmin) / (Zmax - Zmin);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggresiveInlining)]
+        public readonly double InterpX(double lerp)
+        {
+            return Xmin + lerp * (Xmax - Xmin);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggresiveInlining)]
+        public readonly double InterpY(double lerp)
+        {
+            return Ymin + lerp * (Ymax - Ymin);
+        } 
+        
+        [MethodImpl(MethodImplOptions.AggresiveInlining)]
+        public readonly double InterpZ(double lerp)
+        {
+            return Zmin + lerp * (Zmax - Zmin);
         }
     }
     
