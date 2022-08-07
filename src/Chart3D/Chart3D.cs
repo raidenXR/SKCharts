@@ -1,6 +1,7 @@
 using System;
 using System.Numerics;
-
+using System.Runtime.InteropServices;
+using static System.Runtime.InteropServices.Marshal;
 
 namespace SKCharts
 {
@@ -33,20 +34,104 @@ namespace SKCharts
             
         }
 
-        public static void canvas_drawVertices(SKCanvas canvas, SKVertexMode mode, Span<SKPoint> positions, Span<SKPoint>? textures, Span<SKColor> colors, Span<ushort> indices)
+        internal static void make_vertices(ref IntrPtr vertices, Span<SKPoint> positions, Span<SKColor> colors, Span<ushort> indices)
         {
-            var _textures = (textures.HasValue) ? textures.Value : null; 
-            var vertices = sk_vertices_make_copy((int)mode, positions.Lenght, positions, _textures, colors, indices);
+            var mode = ...;           // hard copy value
+            sk_make_vertices(mode, positions.Length, positions, colors, indices.Length, indices);
+        }
+        
+        public static void canvas_drawVertices(SKCanvas canvas, IntrPtr vertices)
+        {
+            unsafe
+            {
+                uint mode = SKVertexMode.Triangles;        // hard copy value
+                SKPoint* textures = null;
+                
+                var vertices = sk_vertices_make_copy(mode, positions.Length, positions, textures, colors, indices);
+                sk_canvas_draw_vertices(...);
+            }
         }
 
-        public static void canvas_drawText(SKCanvas canvas, )
+        public static void canvas_drawText(SKCanvas canvas, ReadOnlyString<char> text, SKPoint position, SKPaint paint)
         {
             
+        }
+        
+        public static void canvas_drawFloat(SKCanvas canvas, float number, SKPoint position, SKPaint paint)
+        {
+            var buffer = stackalloc char[64];
+            FloatToString(number, buffer, 3);
+            canvas_drawText(canvas, buffer, position, paint);
         }
 
         public static void canvas_flush(SKCanvas canvas)
         {
             sk_canvas_flush(canvas);
+        }
+        
+        // Reverses a string 'str' of length 'len'
+        static void Reverse(Span<char> str, int len)
+        {
+            int i = 0;
+            int j = len - 1;
+            int temp = 0;
+            
+            while (i < j) 
+            {
+                temp = str[i];
+                str[i] = str[j];
+                str[j] = temp;
+                i++;
+                j--;
+            }
+        }
+        
+        // Converts a given integer x to string str[].
+        // d is the number of digits required in the output.
+        // If d is more than the number of digits in x,
+        // then 0s are added at the beginning.
+        static int IntToString(int x, Span<char> str, int d)
+        {
+            int i = 0;
+            while (x > 0) 
+            {
+                str[i++] = (x % 10) + '0';
+                x = x / 10;
+            }
+
+            // If number of digits required is more, then
+            // add 0s at the beginning
+            while (i < d) str[i++] = '0';
+
+            reverse(str, i);
+            str[i] = '\0';
+            return i;
+        }
+ 
+        // Converts a floating-point/double number to a string.
+        static void FloatToString(float n, Span<char> res, int afterpoint)
+        {
+            // Extract integer part
+            int ipart = (int)n;
+
+            // Extract floating part
+            float fpart = n - (float)ipart;
+
+            // convert integer part to string
+            int i = IntToString(ipart, res, 0);
+
+            // check for display option after point
+            if (afterpoint != 0) 
+            {
+                res[i] = '.'; // add dot
+
+                // Get the value of fraction part upto given no.
+                // of points after dot. The third parameter
+                // is needed to handle cases like 233.007
+                fpart = fpart * Math.Pow(10, afterpoint);
+
+                intToStr((int)fpart, res[(i + 1)..], afterpoint);
+            }
         }
     }
 
@@ -68,9 +153,14 @@ namespace SKCharts
         const float Z_MAX = 1.0f;
         
         const int MAX_SIZE = 100_000;
-        SKPoint[] points_buffer = new SKPoint[MAX_SIZE];
-        ushort[] indices_buffer = new ushort[MAX_SIZE];
-        SKColor[] colors_buffer = new SKColor[MAX_SIZE];
+        IntPtr points_buffer;
+        IntPtr indices_buffer;
+        IntrPtr colors_buffer;
+        IntrPtr vertices_buffer;
+        // SKPoint[] points_buffer = new SKPoint[MAX_SIZE];             // IntPtr ???  'easier' for Skia bindings...
+        // ushort[] indices_buffer = new ushort[MAX_SIZE];              // IntPtr ???
+        // SKColor[] colors_buffer = new SKColor[MAX_SIZE];             // IntPtr ???
+        // IntPtr vertices = ... ??? sk.copy_vertices();
         
         bool xgrid = true;
         bool ygrid = true;
@@ -95,7 +185,12 @@ namespace SKCharts
             axes_paint = new();
             labels_paint = new();
             title_paint = new();
-            colorbar_paint = new();        
+            colorbar_paint = new();       
+            
+            points_buffer = AllocHGlobal(MAX_SIZE * sizeof(SKPoint));
+            indices_buffer = AllocHGlobal(MAX_SIZE * sizeof(ushort));
+            colors_buffer = AllocHGlobal(MAX_SIZE * sizeof(SKColor));
+            // vertices_buffer = AllocHGlobal(MAX_SIZE * sizeof(SKVertices));
         }
     
         ~Chart3D()
@@ -104,7 +199,12 @@ namespace SKCharts
             axes_paint.Dispose();
             labels_paint.Dispose();
             title_paint.Dispose();
-            colorbar_paint.Dispose();            
+            colorbar_paint.Dispose();        
+            
+            FreeHGlobal(points_buffer);
+            FreeHGlobal(indices_buffer);
+            FreeHGlobal(colors_buffer);
+            FreeHGlobal(vertices_buffer);
         }        
 
         #endregion
@@ -120,7 +220,7 @@ namespace SKCharts
     
         void DrawGridlines(SKCanvas canvas)
         {
-            var pts = points_buffer;
+            var pts = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
             var dx = ...;
             var dy = ...;
             var dz = ...;
@@ -168,7 +268,7 @@ namespace SKCharts
                 }
             }
 
-            Sk.canvas_drawLines(pts.AsSpan(0, i), null, gridlines_paint);            // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], null, gridlines_paint);            // draw vertices as lines
         }
 
     
@@ -179,7 +279,7 @@ namespace SKCharts
             var ptY = new Vector3(X_MIN, Y_MAX, Z_MIN);
             var ptZ = new Vector3(X_MIN, Y_MIN, Z_MAX);
             
-            var pts = points_buffer;
+            var pts = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
             pts[0] = (pt0 * transform * projection).ToSKPoint();
             pts[1] = (ptX * transform * projection).ToSKPoint();
             pts[2] = (pt0 * transform * projection).ToSKPoint();
@@ -187,13 +287,12 @@ namespace SKCharts
             pts[4] = (pt0 * transform * projection).ToSKPoint();
             pts[5] = (ptZ * transform * projection).ToSKPoint();
             
-            Sk.canvas_drawLines(pts.AsSpan(0, 6), null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..6], null, axes_paint);    // draw vertices as lines
         }
     
         void DrawTicks(SKCanvas canvas)
         {    
-            var pts = points_buffer;
-            var label_buffer = stackalloc char[64];              // buffer to write on labels...
+            var pts = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
             var dx = ...;
             var dy = ...;
             var dz = ...;
@@ -210,8 +309,7 @@ namespace SKCharts
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();
 
-                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
-                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
+                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpX(x), (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
                 }                
             }
             // draw Y ticks
@@ -224,9 +322,8 @@ namespace SKCharts
     
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();      
-
-                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
-                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
+                    
+                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpY(y), (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
                 }                
             }   
             // draw Z ticks
@@ -240,26 +337,24 @@ namespace SKCharts
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                          
 
-                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
-                    Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);
+                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpZ(z), (pt2 * transform * projection).ToSKPoint(), labels_paint);
                 }                
             }
 
-            labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
-            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], null, axes_paint);    // draw vertices as lines
         }
 
 
         #region draw_models
         void DrawSurface(SKCanvas canvas, Model3D model)
         {   
-            var pts = model.data;
-            var colormap = model.Colormap;
-            var vertices = points_buffer;
-            var indices = indices_buffer;
-            var colors = colors_buffer;
             var zmin = model.Bounds.Zmin;
             var zmax = model.Bounds.Zmax;
+            var pts = model.data;
+            var colormap = model.Colormap;
+            var vertices = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
+            var indices  = new Span<SKPoint>(indices_buffer.ToPointer(), MAX_SIZE);
+            var colors   = new Span<SKPoint>(colors_buffer.ToPointer(), MAX_SIZE);            
 
             // REPLACE WITH PROPER OCCULATION ALGORITHM !!!
             for (int i = 0, v = 0, c = 0, l = 0; i < width - 1; i++)
@@ -276,7 +371,7 @@ namespace SKCharts
                     if (azimuth >= -180 && azimuth < 0) ii = i;
                 }               
 
-                for (int v = 0, l = 0, c = 0; i < data.Length; v += 4, l += 6, c += 4)
+                for (int v = 0, i = 0, c = 0; i < data.Length; v += 4, i += 6, c += 4)
                 {
                     //int jj = j;
                     //if (elevation < 0) jj = height - 2 - j;
@@ -292,37 +387,40 @@ namespace SKCharts
                     colors[c + 2] = Colormaps.GetColor(colormap, pts[(ii + 1) * (jj + 1)].Z, zmin, zmax);
                     colors[c + 3] = Colormaps.GetColor(colormap, pts[(ii + 1) * (jj + 0)].Z, zmin, zmax);
                     
-                    indices[l + 0] = (ushort)(v + 0);
-                    indices[l + 1] = (ushort)(v + 1);
-                    indices[l + 2] = (ushort)(v + 3);
-                    indices[l + 3] = (ushort)(v + 3);
-                    indices[l + 4] = (ushort)(v + 1);
-                    indices[l + 5] = (ushort)(v + 2);
+                    indices[i + 0] = (ushort)(v + 0);
+                    indices[i + 1] = (ushort)(v + 1);
+                    indices[i + 2] = (ushort)(v + 3);
+                    indices[i + 3] = (ushort)(v + 3);
+                    indices[i + 4] = (ushort)(v + 1);
+                    indices[i + 5] = (ushort)(v + 2);
                 }
             }
+            
+            Sk.make_vertices(ref vertices_buffer, vertices[0..v], colors[0..c], indices[0..i]);
+            Sk.canvas_drawVertices(canvas, vertices_buffer);
         }
 
         void DrawLine3D(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
-            var pts = points_buffer;
+            var pts = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
             for(int i = 0, j = 1; j < data.Length; i += 2, j += 1)
             {
                 pts[i + 0] = (data[j - 1] * transform * projection).ToSKPoint();
                 pts[i + 1] = (data[j - 0] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], null, axes_paint);    // draw vertices as lines
         }
         
         void DrawPoints(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
-            var pts = points_buffer;
+            var pts = new Span<SKPoint>(points_buffer.ToPointer(), MAX_SIZE);
             for(int i = 0; i < data.Length; i += 1)
             {
                 pts[i] = (data[i] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawPoints(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as points       
+            Sk.canvas_drawPoints(canvas, pts[0..i], null, axes_paint);    // draw vertices as points       
         }
         #endregion
                  
@@ -353,10 +451,10 @@ namespace SKCharts
             var ylabel_position = new Vector3(X_MIN - 2.0f * dx, y, Z_MIN);
             var zlabel_position = new Vector3(X_MIN - 2.0f * dx, Y_MIN - 2.0f * dy, z);
 
-            if(Title != null) Sk.canvas_drawText(Title, (title_position * transform * projection).ToSKPoint(), title_paint);
-            if(XLabel != null) Sk.canvas_drawText(XLabel, (xlabel_position * transform * projection).ToSKPoint(), title_paint);
-            if(YLabel != null) Sk.canvas_drawText(YLabel, (ylabel_position * transform * projection).ToSKPoint(), title_paint);
-            if(ZLabel != null) Sk.canvas_drawText(Zlabel, (zlabel_position * transform * projection).ToSKPoint(), title_paint);
+            if(Title != null) Sk.canvas_drawText(canvas, Title, (title_position * transform * projection).ToSKPoint(), title_paint);
+            if(XLabel != null) Sk.canvas_drawText(canvas, XLabel, (xlabel_position * transform * projection).ToSKPoint(), title_paint);
+            if(YLabel != null) Sk.canvas_drawText(canvas, YLabel, (ylabel_position * transform * projection).ToSKPoint(), title_paint);
+            if(ZLabel != null) Sk.canvas_drawText(canvas, Zlabel, (zlabel_position * transform * projection).ToSKPoint(), title_paint);
         }
 
         void DrawColorbar(SKCanvas canvas)
