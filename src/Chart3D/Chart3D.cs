@@ -55,8 +55,18 @@ namespace SKCharts
     public class Chart3D
     {
         #region fields
-        Matrix3x3 transform;
-        Matrix3x3 projection;            
+        Matrix4x4 transform;                             // rotation, translation, scale
+        Matrix4x4 projection;
+        Matrix4x4 scale;                                 // scale to viewport (window - screen) size
+        Vector3 camera = new(1, 1, -1);
+        
+        const float X_MIN = 0.0f;                        // transform everything in [0, 1] and scale with transform matrix before .ToSKPoint(); 
+        const float X_MAX = 1.0f;
+        const float Y_MIN = 0.0f;
+        const float Y_MAX = 1.0f;
+        const float Z_MIN = 0.0f;
+        const float Z_MAX = 1.0f;
+        
         const int MAX_SIZE = 100_000;
         SKPoint[] points_buffer = new SKPoint[MAX_SIZE];
         ushort[] indices_buffer = new ushort[MAX_SIZE];
@@ -111,53 +121,63 @@ namespace SKCharts
         void DrawGridlines(SKCanvas canvas)
         {
             var pts = points_buffer;
-            int i = 0;
-            // xz
+            var dx = ...;
+            var dy = ...;
+            var dz = ...;
+            int i = 0;    
+            // xy - xz
             {
-                for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx,i += 2)
+                for(float x = X_MIN + dx; x < X_MAX; x += dx, i += 4)
                 {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin, bounds.Zmax);
+                    var pt0 = new Vector3(x, Y_MIN, Z_MIN);
+                    var pt1 = new Vector3(x, Y_MAX, Z_MIN);
+                    var pt2 = new Vector3(x, Y_MIN, Z_MAX);
 
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();
-                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                     
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                    
+                    pts[i + 2] = (pt0 * transform * projection).ToSKPoint();
+                    pts[i + 3] = (pt2 * transform * projection).ToSKPoint();  
+                }
+            }   
+            // yx - yz
+            {
+                for(float y = Y_MIN + dy; y < Y_MAX; y += dy, i += 4)
+                {
+                    var pt0 = new Vector3(X_MIN, y, Z_MIN);
+                    var pt1 = new Vector3(X_MAX, y, Z_MIN);
+                    var pt2 = new Vector3(X_MIN, y, Z_MAX);
+
+                    pts[i + 0] = (pt0 * transform * projection).ToSKPoint();
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint(); 
+                    pts[i + 2] = (pt0 * transform * projection).ToSKPoint(); 
+                    pts[i + 3] = (pt2 * transform * projection).ToSKPoint(); 
+                }
+            }
+            // zx - zy
+            {
+                for(float z = Z_MIN + dz; z < Z_MAX; z += dz, i += 4)
+                {
+                    var pt0 = new Vector3(X_MIN, Y_MIN, z);
+                    var pt1 = new Vector3(X_MAX, Y_MIN, z);
+                    var pt2 = new Vector3(X_MIN, Y_MAX, z);
+                    
+                    pts[i + 0] = (pt0 * transform * projection).ToSKPoint();
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint(); 
+                    pts[i + 2] = (pt0 * transform * projection).ToSKPoint(); 
+                    pts[i + 3] = (pt2 * transform * projection).ToSKPoint(); 
                 }
             }
 
-            // yz
-            {
-                for(double y = bounds.Xmin + dx; x < bounds.Xmax; x += dx,i += 2)
-                {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin, bounds.Zmax);
-
-                    pts[i + 0] = (pt0 * transform * projection).ToSKPoint();
-                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                     
-                }
-            }
-
-            // xy
-            {
-                for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx,i += 2)
-                {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin, bounds.Zmax);
-
-                    pts[i + 0] = (pt0 * transform * projection).ToSKPoint();
-                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                     
-                }
-            }
-
-            Sk.canvas_drawLines(pts.AsSpan(0, i), null, gridlines_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(pts.AsSpan(0, i), null, gridlines_paint);            // draw vertices as lines
         }
 
     
         void DrawAxes(SKCanvas canvas)
         {            
-            var pt0 = new Vector3(bounds.Xmin, bounds.Ymin, bounds.Zmin);   // get the 4 vectors of the space O, X, Y, Z
-            var ptX = new Vector3(bounds.Xmax, bounds.Ymin, bounds.Zmin);
-            var ptY = new Vector3(bounds.Xmin, bounds.Ymax, bounds.Zmin);
-            var ptZ = new Vector3(bounds.Xmin, bounds.Ymin, bounds.Zmax);
+            var pt0 = new Vector3(X_MIN, Y_MIN, Z_MIN);                             // get the 4 vectors of the space O, X, Y, Z
+            var ptX = new Vector3(X_MAX, Y_MIN, Z_MIN);
+            var ptY = new Vector3(X_MIN, Y_MAX, Z_MIN);
+            var ptZ = new Vector3(X_MIN, Y_MIN, Z_MAX);
             
             var pts = points_buffer;
             pts[0] = (pt0 * transform * projection).ToSKPoint();
@@ -174,53 +194,58 @@ namespace SKCharts
         {    
             var pts = points_buffer;
             var label_buffer = stackalloc char[64];              // buffer to write on labels...
-            double offset_X = (bouds.Ymax - bound.Ymin) / 10.0;  
-            double offset_Y = (bounds.Xmax - bounds.Xmin) / 10.0;
+            var dx = ...;
+            var dy = ...;
+            var dz = ...;
             
             int i = 0;
             // draw X ticks
             {
-                for(double x = bounds.Xmin + dx; x < bounds.Xmax; x += dx, i += 2)
+                for(float x = X_MIN + dx; x < X_MAX; x += dx, i += 2)
                 {
-                    var pt0 = new Vector3(x, bounds.Ymin, bounds.Zmin);
-                    var pt1 = new Vector3(x, bounds.Ymin - offset_X, bounds.Zmin);                    
-                    var pt2 = new Vector3(x - dx/2.0, bounds.Ymin - offset_X, bounds.Zmin);
+                    var pt0 = new Vector3(x, Y_MIN, Z_MIN);
+                    var pt1 = new Vector3(x, Y_MIN - dy, Z_MIN);                    
+                    var pt2 = new Vector3(x - dx/2.0f, Y_MIN - dy, Z_MIN);
     
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
-                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint()
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();
 
+                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
                     Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
                 }                
             }
             // draw Y ticks
             {                
-                for(double y = bounds.Ymin + dy; y < bounds.Ymax; y += dy, i += 2)
+                for(double y = Y_MIN + dy; y < Y_MAX; y += dy, i += 2)
                 {
-                    var pt0 = new Vector3(bounds.Xmin, y, bounds.Zmin);
-                    var pt1 = new Vector3(bounds.Xmin - offset_Y, y, bounds.Zmin);                    
-                    var pt2 = new Vector3(bounds.Xmin - offset_Y, y - dy/2.0, bounds.Zmin);                    
+                    var pt0 = new Vector3(X_MIN, y, Z_MIN);
+                    var pt1 = new Vector3(X_MIN - dx, y, Z_MIN);                    
+                    var pt2 = new Vector3(X_MIN - dx, y - dy/2.0f, Z_MIN);                    
     
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
-                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint();      
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();      
 
+                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
                     Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
                 }                
             }   
             // draw Z ticks
             {                
-                for(double z = bounds.Zmin + dz; z < bounds.Zmax; z += dz, i += 2)
+                for(double z = Z_MIN + dz; z < Z_MAX; z += dz, i += 2)
                 {
-                    var pt0 = new Vector3(bounds.Xmin, bounds.Ymin, z);
-                    var pt1 = new Vector3(bounds.Xmin - offset_X, bounds.Ymin - offset_Y, z);
-                    var pt2 = new Vector3(bounds.Xmin - offset_X, bounds.Ymin - offset_Y, z - dz/2.0);
+                    var pt0 = new Vector3(X_MIN, Y_MIN, z);
+                    var pt1 = new Vector3(X_MIN - dx, Y_MIN - dy, z);
+                    var pt2 = new Vector3(X_MIN - dx, Y_MIN - dy, z - dz/2.0f);
                         
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
-                    pts[i + 1] = (pt0 * transform * projection).ToSKPoint();                          
+                    pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                          
 
+                    labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
                     Sk.canvas_drawtext(label_buffer, (pt2 * transform * projection).ToSKPoint(), labels_paint);
                 }                
             }
 
+            labels_buffer.AsString();                                   // ReadOnlySpan<char>["as string"]
             Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
         }
 
@@ -251,7 +276,7 @@ namespace SKCharts
                     if (azimuth >= -180 && azimuth < 0) ii = i;
                 }               
 
-                for (int i = 0, v = 0, c = 0; i < data.Lenght; i ++ i, v += 4, l += 6, c += 4)
+                for (int v = 0, l = 0, c = 0; i < data.Length; v += 4, l += 6, c += 4)
                 {
                     //int jj = j;
                     //if (elevation < 0) jj = height - 2 - j;
@@ -280,23 +305,24 @@ namespace SKCharts
         void DrawLine3D(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
             var pts = points_buffer;
-            for(int i = 0; 0 < data.Length; i += 1)
+            for(int i = 0, j = 1; j < data.Length; i += 2, j += 1)
             {
-                pts[i] = (data[i] * transform * projection).ToSKPoint();
+                pts[i + 0] = (data[j - 1] * transform * projection).ToSKPoint();
+                pts[i + 1] = (data[j - 0] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines            c
+            Sk.canvas_drawLines(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines
         }
         
         void DrawPoints(SKCanvas canvas, ReadOnlySpan<Vector3> data)
         {
             var pts = points_buffer;
-            for(int i = 0; 0 < data.Length; i += 1)
+            for(int i = 0; i < data.Length; i += 1)
             {
                 pts[i] = (data[i] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawPoints(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as lines        
+            Sk.canvas_drawPoints(pts.AsSpan(0, i), null, axes_paint);    // draw vertices as points       
         }
         #endregion
                  
@@ -315,15 +341,22 @@ namespace SKCharts
         }
 
         void DrawTitle(SKCanvas canvas)
-        {
-            if(Title == null) return;
-            
-            var x = (bounds.Xmax - bounds.Xmin) / 2.0;
-            var y = (bounds.Ymax - bounds.Ymin) / 2.0;
-            var z = (bounds.Zmax - bounds.Zmin) / 2.0;
+        {            
+            var x = (X_MAX - X_MIN) / 2.0f;
+            var y = (Y_MAX - Y_MIN) / 2.0f;
+            var z = (Z_MAX - Z_MIN) / 2.0f;
+            var dx = ...;
+            var dy = ...;
+            var dz = ...;
             var title_position = new Vector3(x, y, z);
+            var xlabel_position = new Vector3(x, Y_MIN - 2.0f * dy, Z_MIN);
+            var ylabel_position = new Vector3(X_MIN - 2.0f * dx, y, Z_MIN);
+            var zlabel_position = new Vector3(X_MIN - 2.0f * dx, Y_MIN - 2.0f * dy, z);
 
-            Sk.canvas_drawText(Title, (SKPoint)title_position, title_paint);
+            if(Title != null) Sk.canvas_drawText(Title, (title_position * transform * projection).ToSKPoint(), title_paint);
+            if(XLabel != null) Sk.canvas_drawText(XLabel, (xlabel_position * transform * projection).ToSKPoint(), title_paint);
+            if(YLabel != null) Sk.canvas_drawText(YLabel, (ylabel_position * transform * projection).ToSKPoint(), title_paint);
+            if(ZLabel != null) Sk.canvas_drawText(Zlabel, (zlabel_position * transform * projection).ToSKPoint(), title_paint);
         }
 
         void DrawColorbar(SKCanvas canvas)
@@ -343,7 +376,7 @@ namespace SKCharts
             DrawModels(canvas);
             DrawTitle(canvas);
             DrawColorbar(canvas);
-            sk_canvas_flush(canvas);
+            Sk.canvas_flush(canvas);
 
             update = false;
         }       
@@ -372,7 +405,7 @@ namespace SKCharts
         public SKPaint PaintTitle     => title_paint;
         public SKPaint PaintColorbar  => colorbar_paint;
 
-        public Matrix3x3 Transform
+        public Matrix4x4 Transform
         {
             get => transform;
             set
@@ -382,13 +415,23 @@ namespace SKCharts
             }        
         }
     
-        public Matrix3x3 Projection
+        public Matrix4x4 Projection
         {
             get => projection;
             set
             {
                 projection = value;
                 update = true;            
+            }
+        }
+        
+        public Matrix4x4 Scale
+        {
+            get => scale;
+            set
+            {
+                scale = value;
+                update = true;
             }
         }
         #endregion
