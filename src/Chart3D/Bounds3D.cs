@@ -25,6 +25,10 @@ namespace SKCharts
             double ymax = Math.Max(a.Ymax, b.Ymax);
             double zmin = Math.Min(a.Zmin, b.Zmin);
             double zmax = Math.Max(a.Zmax, b.Zmax);
+            
+            if(xmin == xmax) throw new Excetpion("xmin == xmax");
+            if(ymin == ymax) throw new Excetpion("ymin == ymax");
+            if(zmin == zmax) throw new Excetpion("zmin == zmax");
     
             return new Bounds3D
             {
@@ -55,6 +59,10 @@ namespace SKCharts
                 zmin = Math.Min(zmin, pt.Zmin);
                 zmax = Math.Max(zmax, pt.Zmax);    
             }
+            
+            if(xmin == xmax) throw new Excetpion("xmin == xmax");
+            if(ymin == ymax) throw new Excetpion("ymin == ymax");
+            if(zmin == zmax) throw new Excetpion("zmin == zmax");
     
             return new Bounds3D
             {
@@ -65,6 +73,13 @@ namespace SKCharts
                 Zmin = zmin,
                 Zmax = zmax
             }   
+        }
+        
+        public readonly double LerpZ(double zvalue)
+        {
+            if(zvalue > Zmax || zvalue < Zmin) throw new ArgumentException("zvalue not in [Zmin, Zmax]");
+            
+            return (zvalue - Zmin) / (Zmax - Zmin);
         }
     }
     
