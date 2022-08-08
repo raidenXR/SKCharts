@@ -24,17 +24,17 @@ namespace SKCharts
         [DllImport(libname)]
         static extern void sk_canvas_flush(SKCanvas canvas);
 
-        public static void canvas_drawPoints(SKCanvas canvas, )
+        public static void canvas_drawPoints(SKCanvas canvas, Span<SKPaint> pts, SKPaint paint)
         {
             
         }
 
-        public static void canvas_drawLines(SKCanvas canvas, )
+        public static void canvas_drawLines(SKCanvas canvas, Span<SKPoint> pts, SKPaint paint)
         {
             
         }
 
-        internal static void make_vertices(ref IntrPtr vertices, Span<SKPoint> positions, Span<SKColor> colors, Span<ushort> indices)
+        internal static void write_vertices(ref IntrPtr vertices, Span<SKPoint> positions, Span<SKColor> colors, Span<ushort> indices)
         {
             var mode = ...;           // hard copy value
             sk_make_vertices(mode, positions.Length, positions, colors, indices.Length, indices);
@@ -268,7 +268,7 @@ namespace SKCharts
                 }
             }
 
-            Sk.canvas_drawLines(canvas, pts[0..i], null, gridlines_paint);            // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], gridlines_paint);            // draw vertices as lines
         }
 
     
@@ -287,7 +287,7 @@ namespace SKCharts
             pts[4] = (pt0 * transform * projection).ToSKPoint();
             pts[5] = (ptZ * transform * projection).ToSKPoint();
             
-            Sk.canvas_drawLines(canvas, pts[0..6], null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..6], axes_paint);    // draw vertices as lines
         }
     
         void DrawTicks(SKCanvas canvas)
@@ -341,7 +341,7 @@ namespace SKCharts
                 }                
             }
 
-            Sk.canvas_drawLines(canvas, pts[0..i], null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], axes_paint);    // draw vertices as lines
         }
 
 
@@ -396,7 +396,7 @@ namespace SKCharts
                 }
             }
             
-            Sk.make_vertices(ref vertices_buffer, vertices[0..v], colors[0..c], indices[0..i]);
+            Sk.write_vertices(ref vertices_buffer, vertices[0..v], colors[0..c], indices[0..i]);
             Sk.canvas_drawVertices(canvas, vertices_buffer);
         }
 
@@ -409,7 +409,7 @@ namespace SKCharts
                 pts[i + 1] = (data[j - 0] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawLines(canvas, pts[0..i], null, axes_paint);    // draw vertices as lines
+            Sk.canvas_drawLines(canvas, pts[0..i], axes_paint);    // draw vertices as lines
         }
         
         void DrawPoints(SKCanvas canvas, ReadOnlySpan<Vector3> data)
@@ -420,7 +420,7 @@ namespace SKCharts
                 pts[i] = (data[i] * transform * projection).ToSKPoint();
             }
             
-            Sk.canvas_drawPoints(canvas, pts[0..i], null, axes_paint);    // draw vertices as points       
+            Sk.canvas_drawPoints(canvas, pts[0..i], axes_paint);    // draw vertices as points       
         }
         #endregion
                  
