@@ -57,10 +57,10 @@ namespace SKCharts
             
         }
         
-        public static void canvas_drawFloat(SKCanvas canvas, float number, SKPoint position, SKPaint paint)
+        public static void canvas_drawDouble(SKCanvas canvas, double number, SKPoint position, SKPaint paint)
         {
             var buffer = stackalloc char[64];
-            FloatToString(number, buffer, 3);
+            DoubleToString(number, buffer, 3);
             canvas_drawText(canvas, buffer, position, paint);
         }
 
@@ -109,7 +109,7 @@ namespace SKCharts
         }
  
         // Converts a floating-point/double number to a string.
-        static void FloatToString(float n, Span<char> res, int afterpoint)
+        static void DoubleToString(double n, Span<char> res, int afterpoint)
         {
             // Extract integer part
             int ipart = (int)n;
@@ -133,6 +133,18 @@ namespace SKCharts
                 intToStr((int)fpart, res[(i + 1)..], afterpoint);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AgressiveInlining)]
+        public static SKPoint ToSKPoint(this Vector3 vec)
+        {
+            return new SKPoint(vec.X, vec.Y);
+        }
+
+        [MethodImpl(MethodImplOptions.AgressiveInlining)]
+        public static SKPoint ToSKPoint(this Vecto2 vec)
+        {
+            return new SKPoint(vec.X, vec.Y);
+        }
     }
 
 
@@ -140,9 +152,10 @@ namespace SKCharts
     public class Chart3D
     {
         #region fields
-        Matrix4x4 transform;                             // rotation, translation, scale
-        Matrix4x4 projection;
         Matrix4x4 scale;                                 // scale to viewport (window - screen) size
+        Matrix4x4 translate;
+        Matrix4x4 projection;
+        Matrix4x4 transform;                             // rotation, translation, scale
         Vector3 camera = new(1, 1, -1);
         
         const float X_MIN = 0.0f;                        // transform everything in [0, 1] and scale with transform matrix before .ToSKPoint(); 
@@ -155,12 +168,8 @@ namespace SKCharts
         const int MAX_SIZE = 100_000;
         IntPtr points_buffer;
         IntPtr indices_buffer;
-        IntrPtr colors_buffer;
-        IntrPtr vertices_buffer;
-        // SKPoint[] points_buffer = new SKPoint[MAX_SIZE];             // IntPtr ???  'easier' for Skia bindings...
-        // ushort[] indices_buffer = new ushort[MAX_SIZE];              // IntPtr ???
-        // SKColor[] colors_buffer = new SKColor[MAX_SIZE];             // IntPtr ???
-        // IntPtr vertices = ... ??? sk.copy_vertices();
+        IntPtr colors_buffer;
+        IntPtr vertices_buffer;
         
         bool xgrid = true;
         bool ygrid = true;
@@ -309,7 +318,7 @@ namespace SKCharts
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();
 
-                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpX(x), (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
+                    Sk.canvas_drawDouble(canvas, bounds.InterpX(x), (pt2 * transform * projection).ToSKPoint(), labels_paint);            // [DllImport(libname)] calls the original function, not the wrapped one...
                 }                
             }
             // draw Y ticks
@@ -323,7 +332,7 @@ namespace SKCharts
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();      
                     
-                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpY(y), (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
+                    Sk.canvas_drawDouble(canvas, bounds.InterpY(y), (pt2 * transform * projection).ToSKPoint(), labels_paint);                    
                 }                
             }   
             // draw Z ticks
@@ -337,7 +346,7 @@ namespace SKCharts
                     pts[i + 0] = (pt0 * transform * projection).ToSKPoint();                          
                     pts[i + 1] = (pt1 * transform * projection).ToSKPoint();                          
 
-                    Sk.canvas_drawFloat(canvas, (float)bounds.InterpZ(z), (pt2 * transform * projection).ToSKPoint(), labels_paint);
+                    Sk.canvas_drawDouble(canvas, bounds.InterpZ(z), (pt2 * transform * projection).ToSKPoint(), labels_paint);
                 }                
             }
 
@@ -348,6 +357,8 @@ namespace SKCharts
         #region draw_models
         void DrawSurface(SKCanvas canvas, Model3D model)
         {   
+            var width = model.Width.Value;
+            var height = model.Height.Value;
             var zmin = model.Bounds.Zmin;
             var zmax = model.Bounds.Zmax;
             var pts = model.data;

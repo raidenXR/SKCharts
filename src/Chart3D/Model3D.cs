@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 
 namespace SKCharts
 {
@@ -17,12 +18,16 @@ namespace SKCharts
         Model3DMode mode;    
         SKColor? color;
         Colormap? colormap;
+        int? width;
+        int? height;
 
-        public Model3D(Vector3[] data, Model3DMode mode, SKColor? color, Colormap? colormap)
+        public Model3D(Vector3[] data, Model3DMode mode, int? width, int? heigth, SKColor? color, Colormap? colormap)
         {
             this.data = data;
             this.bounds = Bounds3D.GetBounds(data);
             this.mode = mode;
+            this.width = width;
+            this.heigth = heigth;
             this.color = color;
             this.colormap = colormap;
         }
@@ -33,6 +38,8 @@ namespace SKCharts
         public Bounds3D Bounds    => bounds;
         public SKColor Color      => (color != null) ? color.Value : throw new NullException();
         public Colormap Colormap  => (colormap != null) ? colormap.Value : throw new NullException();
+        public int? Width         => width;
+        public int? Height        => height;
     
         public int CompareTo(Model3D other)
         {
@@ -59,13 +66,5 @@ namespace SKCharts
             parent?.bounds = Bounds3D.GetBounds(this.bounds, parent.bounds);
             parent?.update = true;
         }
-
-        #region exports
-        [DllExport("CopyData", CallingConvention = CallingConvention.Cdecl)]
-        public static void copy_data_rawF(Model3D model, Chart3D parent, float[] buffer, int start, int count, int offset_x, int offset_y, int offset_z, int stride)
-        {
-            model.CopyDataRawF(parent, buffer.AsSpan()[start..], count, offset_x, offset_y, offset_z, stride);
-        }
-        #endregion
     }
 }

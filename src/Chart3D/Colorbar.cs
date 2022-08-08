@@ -1,23 +1,43 @@
-
+using System;
+using System.Numerics;
+using System.Runtime.InteropServices;
+using static System.Runtime.InteropServices.Marshal;
 
 namespace SKCharts
 {
     public class Colorbar
     {
-        const int MAP_SIZE = Colormaps.MAP_SIZE;
-    
-        SKPoint[] vertices = new SKPoint[MAP_SIZE * 4];   // colorbar
-        SKColor[] colors = new SKColor[MAP_SIZE * 4];
-        ushort[] indices = new ushort[MAP_SIZE * 6];
-        List<string> labels = new List<string>(10);
-        List<SKPoint> labelsPositions = new List<SKPoint>(10);
-        SKRect border;
-        bool drawBoder;
+        Matrix3x2 scale;
+        Matrix3x2 translate;
+        Matrix3x2 transform;               
         Colormap colormap;
+        Chart3D? parent;
+        
+        const int MAP_SIZE = Colormaps.MAP_SIZE;
+        IntPtr vertices_buffer;
+        IntPtr colors_buffer;
+        IntPtr indices_buffer;
 
-        int _left, _height;
-        double _zmin, _zmax;
-        float _fontSize;
+        const float X_MIN = 0.0f;
+        const float X_MAX = 1.0f;
+        const float Y_MIN = 0.0f;
+        const float Y_MAX = 1.0f;
+
+        public Colorbar(Colormap colormap, Chart3D? parent)
+        {
+            vertices_buffer = AllocHGlobal(sizeof(SKPoint) * MAP_SIZE);
+            colors_buffer = AllocHGlobal(sizeof(SKColor) * MAP_SIZE);
+            indices_buffer = AllocHGlobal(sizeof(ushort) * MAP_SIZE);
+
+            this.parent = parent;
+        }
+
+        ~Colorbar()
+        {
+            FreeHGlobal(vertices_buffer);
+            FreeHGlobal(colors_buffer);
+            FreeHGlobal(indices_buffer);
+        }
 
         public ColorMap ColorMap
         {
@@ -27,102 +47,112 @@ namespace SKCharts
                 if(colormap != value)
                 {
                     colormap = value;
-                    SetColorbar(_left, _height, _zmin, _zmax);
+                    parent?.update = true;
                 }
             }
-        }
-   
+        }   
 
-        public ColorBar(Colormap colormap, int left, int height, double zmin, double zmax, float fontSize, bool drawBorder)
+        public Matrix3x2 Scale
         {
-            float x = left;
-            float y = height / 2f - 150;
-            float dx = 20;
-            border = new SKRect(x - 1, y - 1, x + 1 + dx, 400 - y);
-            this.drawBoder = drawBorder;
-            this.colormap = colormap;
-
-            Restore(left, height, zmin, zmax, fontSize);
+            get => scale;
+            set => scale = value;
         }
 
-        void SetColorbar(int left, int height, double zmin, double zmax)
+        public Matrix3x2 Translate
         {
-            float x = left;
-            float y = height / 2f - 150;
-            float dy = (height - 100f) / MAP_SIZE; // 64f;
-            float dx = 20;
-            double zvalue = zmax;
+            get => translate;
+            set => translate = value;
+        }
 
-            for (int i = 0, c = 0, m = 0; m < vertices.Length; m += 4, i += 6, c += 4)
+        public void Draw(SKCanvas canvas, double zmin, double zmax, SKPaint colorbar_paint)
+        {
+            // colorbar
             {
-                vertices[m + 0] = new SKPoint(x, y);
-                vertices[m + 1] = new SKPoint(x + dx, y);
-                vertices[m + 2] = new SKPoint(x + dx, y + dy);
-                vertices[m + 3] = new SKPoint(x, y + dy);
-
-                indices[i + 0] = (ushort)(m + 0);
-                indices[i + 1] = (ushort)(m + 1);
-                indices[i + 2] = (ushort)(m + 3);
-                indices[i + 3] = (ushort)(m + 3);
-                indices[i + 4] = (ushort)(m + 1);
-                indices[i + 5] = (ushort)(m + 2);
-
-                var color = Colormaps.GetColor(colormap, zvalue, zmin, zmax);
-                colors[c + 0] = color;
-                colors[c + 1] = color;
-                colors[c + 2] = color;
-                colors[c + 3] = color;
-
-                zvalue -= (zmax - zmin) / 64d;
-                y += dy;
-            }
-        }
-
-        public void Restore(int left, int height, double zmin, double zmax, float fontSize)
-        {
-            float x = left;
-            float y = height / 2f - 150;
-            float dy = (height - 100f) / 64f;
-            float dx = 20;
-            double value = zmax;
-
-            SetColorbar(left, height, zmin, zmax);
-
-            float z = height / 2f - 150;
-            float dz = (height - 100f) / 5f;
-            labels.Clear();
-            labelsPositions.Clear();
-
-            for (double d = zmax; d > zmin; d -= (zmax - zmin) / 5d)
-            {
-                labels.Add(d.ToString("0.00"));
-                labelsPositions.Add(new SKPoint(x + dx + 10, z + fontSize / 2f));
-                z += dz;
-            }
-
-
-            _left = left;
-            _height = height;
-            _zmin = zmin;
-            _zmax = zmax;
-            _fontSize = fontSize;
-        }
-
-        public void Draw(SKCanvas canvas, SKPaint paint)
-        {
-            if (drawBoder) canvas.DrawRect(border, paint);
-            canvas.DrawVertices(SKVertexMode.Triangles, vertices, null, colors, indices, paint);                        
-
-            for (int i = 0; i < labels.Count; i++)
-            {
-                canvas.DrawText(labels[i], labelsPositions[i], paint);
-                if (drawBoder)
+                var y = Y_MIN;
+                var dy = (Y_MAX - Y_MIN) / MAP_SIZE;
+                var z = zmin;
+                var dz = (zmax - zmin) / MAP_SIZE;
+                var vertices = new Span<SKPoint>(vertices_buffer.ToPointer(), MAP_SIZE);
+                var colors   = new Span<SKColor>(colorbar_paint.ToPointer(), MAP_SIZE);
+                var indices  = new Spane<ushort>(indices_buffer.ToPointer(), MAP_SIZE);
+            
+                for (int i = 0, c = 0, v = 0, n = 0; n < MAP_SIZE; m += 4, i += 6, c += 4, n += 1, y += dy, z += dz)
                 {
-                    SKPoint p0 = labelsPositions[i];
-                    p0.X -= 10;
-                    SKPoint p1 = new SKPoint(p0.X + 5, p0.Y);
-                    canvas.DrawLine(p0, p1, paint);
+                    var pt0 = new Vector2(X_MIN, y);
+                    var pt1 = new Vector2(X_MAX, y);
+                    var pt2 = new Vector2(X_MAX, y + dy);
+                    var pt3 = new Vector2(X_MIN, y + dy);
+                    
+                    vertices[v + 0] = (pt0 * scale * translate).ToSKPoint();
+                    vertices[v + 1] = (pt1 * scale * translate).ToSKPoint();
+                    vertices[v + 2] = (pt2 * scale * translate).ToSKPoint();
+                    vertices[v + 3] = (pt3 * scale * translate).ToSKPoint();
+
+                    indices[i + 0] = (ushort)(v + 0);
+                    indices[i + 1] = (ushort)(v + 1);
+                    indices[i + 2] = (ushort)(v + 3);
+                    indices[i + 3] = (ushort)(v + 3);
+                    indices[i + 4] = (ushort)(v + 1);
+                    indices[i + 5] = (ushort)(v + 2);
+
+                    var color = Colormaps.GetColor(colormap, z, zmin, zmax);
+                    colors[c + 0] = color;
+                    colors[c + 1] = color;
+                    colors[c + 2] = color;
+                    colors[c + 3] = color;                
                 }
+
+                Sk.canvas_drawVertices(canvas, vertices[0..v], colors[0..c], indices[0..i], colorbar_paint);
+            }
+
+            // frame and labels
+            {
+                var y = Y_MIN;
+                var dy = (Y_MAX - Y_MIN) / MAP_SIZE;
+                var z = zmin;
+                var dz = (zmax - zmin) / MAP_SIZE;
+                var pts = new Span<SKPoint>(vertices_buffer.ToPointer(), MAP_SIZE);
+                var i = 0;
+                // draw rect
+                {
+                    var pt0 = new Vector2(X_MIN, Y_MIN);
+                    var pt1 = new Vector2(X_MAX, Y_MIN);
+                    var pt2 = new Vector2(X_MAX, Y_MAX);
+                    var pt3 = new Vector2(X_MIN, Y_MAX);
+
+                    pts[i + 0] = (pt0 * scale * translate).ToSKPoint();
+                    pts[i + 1] = (pt1 * scale * translate).ToSKPoint();
+                    pts[i + 2] = (pt1 * scale * translate).ToSKPoint();
+                    pts[i + 3] = (pt2 * scale * translate).ToSKPoint();
+                    pts[i + 4] = (pt2 * scale * translate).ToSKPoint();
+                    pts[i + 5] = (pt3 * scale * translate).ToSKPoint();
+                    pts[i + 6] = (pt3 * scale * translate).ToSKPoint();
+                    pts[i + 7] = (pt0 * scale * translate).ToSKPoint();
+
+                    i += 7;
+                }
+                
+                var dx = (X_MAX - X_MIN) / 4.0f;
+                // draw ticks
+                for(int n = 0; n < MAP_SIZE; i += 4, n += 1, y += dy, z += dz)
+                {
+                    var pt0 = new Vector2(X_MIN, y);
+                    var pt1 = new Vector2(X_MIN - dx, y);
+                    
+                    var pt2 = new Vector2(X_MAX, y);
+                    var pt3 = new Vector2(X_MAX + dx, y);
+
+                    var label_position = new Vector2(X_MIN - dx * 10.0f, y - dy * 0.25f);
+
+                    pts[i + 0] = (pt0 * scale * translate).ToSKPoint();
+                    pts[i + 1] = (pt1 * scale * translate).ToSKPoint();
+                    pts[i + 2] = (pt2 * scale * translate).ToSKPoint();
+                    pts[i + 3] = (pt3 * scale * translate).ToSKPoint();
+
+                    Sk.canvas_drawDouble(canvas, z, (label_position * scale * translate).ToSKPoint());
+                }
+
+                Sk.canvas_drawLines(canvas, pts[0..i], colorbar_paint);
             }
         }
     }
