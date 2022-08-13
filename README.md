@@ -17,7 +17,7 @@ to use Skia with the current design as it makes impossible to avoid allocations,
 
 
 The project is terminated, it will not receive updates.\
-**P.S** it does not compile, it was meant to be a draft before bindings for libSkiaSharp.so were written\
-and then it would be tested and finalized. Since, it is discontinued I make the repo public as a *gist*.
+**P.S** it does not compile, it was meant to be a draft before bindings for `libSkiaSharp.so` were written \
+and *then* it would be tested and finalized. Since it is discontinued, I make the repo public as a *gist*.
  
 
