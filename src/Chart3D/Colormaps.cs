@@ -16,8 +16,7 @@ namespace SKCharts
        
     public static class Colormaps
     {
-        public const int MAP_SIZE = 64;
-    
+        public const int MAP_SIZE = 64;    
         SKColorp[] spring = new int[MAP_SIZE];    
         SKColorp[] summer = new int[MAP_SIZE];    
         SKColorp[] autumn = new int[MAP_SIZE];    
@@ -44,7 +43,7 @@ namespace SKCharts
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKColor GetColor(Colormap colormap, double zvalue, double zmin, double zmax)
         {
-            int lerp = (int)((double)MAP_SIZE * ((zvalue - zmin) / (zmax - zmin)));
+            int lerp = (int)(MAP_SIZE * ((zvalue - zmin) / (zmax - zmin)));
     
             return colormap switch
             {

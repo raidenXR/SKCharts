@@ -7,8 +7,13 @@ namespace SKCharts
 {
     static unsafe class Sk
     {
-        const string libname = "SkiaSharp.so";
 
+    #if LINUX
+        const string libname = "SkiaSharp.so";
+    #elif WINDOWS
+        const string libname = "SkiaSharp.dll";
+    #endif
+    
         [DllImport(libname)]
         static extern void sk_canvas_draw_vertices(SKCanvas canvas, const sk_vertices_t* vertices, sk_blendmode_t mode, const sk_paint_t* paint);
 
@@ -69,69 +74,22 @@ namespace SKCharts
             sk_canvas_flush(canvas);
         }
         
-        // Reverses a string 'str' of length 'len'
+        
         static void Reverse(Span<char> str, int len)
         {
-            int i = 0;
-            int j = len - 1;
-            int temp = 0;
             
-            while (i < j) 
-            {
-                temp = str[i];
-                str[i] = str[j];
-                str[j] = temp;
-                i++;
-                j--;
-            }
         }
         
-        // Converts a given integer x to string str[].
-        // d is the number of digits required in the output.
-        // If d is more than the number of digits in x,
-        // then 0s are added at the beginning.
+        
         static int IntToString(int x, Span<char> str, int d)
         {
-            int i = 0;
-            while (x > 0) 
-            {
-                str[i++] = (x % 10) + '0';
-                x = x / 10;
-            }
-
-            // If number of digits required is more, then
-            // add 0s at the beginning
-            while (i < d) str[i++] = '0';
-
-            reverse(str, i);
-            str[i] = '\0';
-            return i;
+            
         }
  
-        // Converts a floating-point/double number to a string.
+
         static void DoubleToString(double n, Span<char> res, int afterpoint)
         {
-            // Extract integer part
-            int ipart = (int)n;
 
-            // Extract floating part
-            float fpart = n - (float)ipart;
-
-            // convert integer part to string
-            int i = IntToString(ipart, res, 0);
-
-            // check for display option after point
-            if (afterpoint != 0) 
-            {
-                res[i] = '.'; // add dot
-
-                // Get the value of fraction part upto given no.
-                // of points after dot. The third parameter
-                // is needed to handle cases like 233.007
-                fpart = fpart * Math.Pow(10, afterpoint);
-
-                intToStr((int)fpart, res[(i + 1)..], afterpoint);
-            }
         }
 
         [MethodImpl(MethodImplOptions.AgressiveInlining)]

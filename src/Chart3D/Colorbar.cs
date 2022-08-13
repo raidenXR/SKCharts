@@ -39,7 +39,7 @@ namespace SKCharts
             FreeHGlobal(indices_buffer);
         }
 
-        public ColorMap ColorMap
+        public Colormap Colormap
         {
             get => colormap;
             set
