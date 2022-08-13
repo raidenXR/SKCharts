@@ -12,8 +12,8 @@ _____________________________________
 `sk_canvas_draw_vertices` from sk_canvas.h uses the function \
 `sk_vertices_make` 
 which creates an **immutable** array of vertices, (it copies the values\
-from the respective arrays of *positions*, *colors*, *indices*), because of that is pointless\
-to use Skia with the current design as it makes impossible to avoid allocations, i.e reuse buffers.\
+from the respective arrays of *positions*, *colors*, *indices*), because of that is pointless \
+to use Skia with the current design as it makes impossible to avoid allocations, i.e reuse buffers. \
 
 
 The project is terminated, it will not receive updates.\
