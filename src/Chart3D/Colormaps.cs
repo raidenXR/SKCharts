@@ -17,14 +17,14 @@ namespace SKCharts
     public static class Colormaps
     {
         public const int MAP_SIZE = 64;    
-        SKColorp[] spring = new int[MAP_SIZE];    
-        SKColorp[] summer = new int[MAP_SIZE];    
-        SKColorp[] autumn = new int[MAP_SIZE];    
-        SKColorp[] winter = new int[MAP_SIZE];    
-        SKColorp[] gray   = new int[MAP_SIZE];    
-        SKColorp[] hot    = new int[MAP_SIZE];    
-        SKColorp[] cool   = new int[MAP_SIZE];    
-        SKColorp[] jet    = new int[MAP_SIZE];    
+        SKColor[] spring = new SKColor[MAP_SIZE];    
+        SKColor[] summer = new SKColor[MAP_SIZE];    
+        SKColor[] autumn = new SKColor[MAP_SIZE];    
+        SKColor[] winter = new SKColor[MAP_SIZE];    
+        SKColor[] gray   = new SKColor[MAP_SIZE];    
+        SKColor[] hot    = new SKColor[MAP_SIZE];    
+        SKColor[] cool   = new SKColor[MAP_SIZE];    
+        SKColor[] jet    = new SKColor[MAP_SIZE];    
     
     
         static Colormaps()
