@@ -20,8 +20,6 @@ using SkiaSharp;
 using System.Windows.Input;
 using IO = System.IO;
 
-using MKXK_GUI;
-
 
 namespace SKCharts;
 
