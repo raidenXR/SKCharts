@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using SkiaSharp;
-using SKCharts;
 
-namespace MKXK_GUI;
+
+namespace SKCharts;
 
 
 public enum Colormap
