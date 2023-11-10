@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:skcharts="using:SKCharts.Avalonia"
+             x:Class="SKCharts.Avalonia.SKChart3DView"
+             Focusable="True">
+             
+      <Grid x:Name="grid" 
+           ColumnDefinitions="200, *">
+         <StackPanel Width="200">
+             <Label Content="Elevation" />
+             <Label Content="{Binding #elevation_slider.Value}" />
+             <Slider x:Name="elevation_slider"
+                     Minimum="0" 
+                     Maximum="90" />
+             <Label Content="Rotation" />
+             <Label Content="{Binding #rotation_slider.Value}" />
+             <Slider x:Name="rotation_slider"
+                     Minimum="-180" 
+                     Maximum="180" />
+             <Label Content="bounds:" />
+             <TextBox Text="{Binding #panel.Bounds.Width}" />
+             <TextBox Text="{Binding #panel.Bounds.Height}" />
+             <Label Content="slider" />
+             <Slider x:Name="slider"
+                     Minimum="-10"
+                     Maximum="10" />
+        </StackPanel>
+        <Panel x:Name="panel" Grid.Column="1">
+            <skcharts:SKChart3DControl x:Name="chart_control"
+                                Width="{Binding #panel.Bounds.Width}"
+                                Height="{Binding #panel.Bounds.Height}" 
+                                ClipToBounds="True"/>                                        
+        </Panel>
+     </Grid>
+</UserControl>
