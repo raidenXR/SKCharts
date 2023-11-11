@@ -84,7 +84,7 @@ public class Window : GameWindow
 		set {
 			chart2d = value;
 			chart2d.Width = width;
-			chart3d.Height = height;
+			chart2d.Height = height;
 		}
 	}
 

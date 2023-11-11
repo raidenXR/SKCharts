@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using static System.Diagnostics.Debug;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using SkiaSharp;
@@ -194,6 +195,8 @@ public class Model3D
 
 	public int W {get; set;}
 	public int H {get; set;}
+
+	public SKChart3D? Parent {get; set;}
 	
 
 	public void Normalize(Bounds3D bounds)
@@ -213,6 +216,30 @@ public class Model3D
 		bounds = Bounds3D.GetBounds(vertices);
 		Normalize(bounds);
 	}	
+
+	public void CopyValues(ReadOnlySpan<Vector3> values)
+	{
+		if(values.Length > vertices.Length) 
+			throw new IndexOutOfRangeException("values.Length is greater than vertices length");
+	
+		for(int i = 0; i < values.Length; i++)
+		{
+			vertices[i] =  values[i];
+		}
+
+		for(int i = values.Length; i < vertices.Length; i++)
+		{
+			vertices[i] = values[values.Length - 1];
+		}
+
+		this.UpdateBounds();
+
+		if(Parent != null)
+		{
+			Parent.UpdateBounds();
+			Parent.Update();
+		}
+	}
 }
 
 

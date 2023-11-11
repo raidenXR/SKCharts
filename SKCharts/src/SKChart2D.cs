@@ -127,12 +127,38 @@ public class SKChart2D : IDisposable
 		}
 
 		models.Add(model);
+		model.Parent = this;
 		foreach(var _model in models) _model.Normalize(bounds);
+
+		UpdateBounds();
+		Update();
+	}
+
+	public void DettachModel(Model2D model)
+	{
+		if(models.Contains(model))
+		{
+			model.Parent = null;
+			models.Remove(model);
+			UpdateBounds();
+			Update();
+		}
+	}
+
+	public void DettachModelAt(int index)
+	{
+		if(index < models.Count)
+		{
+			models[index].Parent = null;
+			models.RemoveAt(index);
+			UpdateBounds();
+			Update();
+		}
 	}
 
 	public void UpdateBounds()
 	{
-		bounds = Bounds2D.NoneDefined;
+		bounds = models.Count > 0 ? models[0].Bounds : new Bounds2D(0, 1, 0, 1);
 		foreach(var model in models)
 		{
 			bounds = Bounds2D.GetBounds(bounds, model.Bounds);

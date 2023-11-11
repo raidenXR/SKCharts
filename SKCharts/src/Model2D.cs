@@ -95,7 +95,7 @@ public class Model2D : IDisposable
 	Chart2DType chart_type;
 	bool is_disposed;
 	
-	SKChart2D Parent {get; set;}
+	public SKChart2D? Parent {get; set;}
 
 	public void Dispose()
 	{
@@ -331,7 +331,7 @@ public class Model2D : IDisposable
 		Assert(vertices.Length >= (2 * (N - 2)));
 				
 		vertices[0] = new Vector2((float)x[0], (float)y[0]);
-		for(int i = 1, j = 1; j < N; i += 2, j += 1)
+		for(int i = 1, j = 1; j < N && i + 1 < vertices.Length; i += 2, j += 1)
 		{
 			var vec = new Vector2((float)x[j], (float)y[j]);
 			vertices[i + 0] = vec;
@@ -342,6 +342,14 @@ public class Model2D : IDisposable
 		for(int i = N; i < vertices.Length; i++)
 		{
 			vertices[i] = vertices[N - 1];
+		}
+
+		this.UpdateBounds();
+		
+		if(Parent != null)
+		{
+			Parent.UpdateBounds();
+			Parent.Update();
 		}
 	}
 }
