@@ -81,13 +81,21 @@ public class Window : GameWindow
 	public SKChart2D Chart2D 
 	{
 		get => chart2d;
-		set => chart2d = value;
+		set {
+			chart2d = value;
+			chart2d.Width = width;
+			chart3d.Height = height;
+		}
 	}
 
 	public SKChart3D Chart3D
 	{
 		get => chart3d;
-		set => chart3d = value;
+		set {
+			chart3d = value;
+			chart3d.Width = width;
+			chart3d.Height = height;
+		}
 	}
 
 	public string? Latex {get; set;}
@@ -118,20 +126,6 @@ public class Window : GameWindow
 		}
     )
     {
-		// if(chart == 2) {
-		// 	chart2d = new SKChart2D(){
-		// 		Width = width,
-		// 		Height = height,
-		// 	};
-		// 	chart2d.Update();
-		// }
-		// if(chart == 3) {
-		// 	chart3d = new SKChart3D(){
-		// 		Width = width,
-		// 		Height = height,
-		// 	};
-		// 	chart3d.Update();			
-		// }
         // VSync = VSyncMode.Off;
 
 		this.width = (float)width;
@@ -227,24 +221,24 @@ public class Window : GameWindow
 		{
 			var m = default_paint.MeasureText(Latex);
 			var x = -m / 2f + width / 2f;
-			var y = 0.85f * this.height;
+			var y = 0.92f * this.height;
 			canvas.DrawText(Latex, new SKPoint(x, y), default_paint);
 		}		
 		if(notation_img != null) {
 			var w = (float)notation_img.Width;
 			var h = (float)notation_img.Height;
 			var xi = -w / 2f + width / 2f;
-			var yi = -h / 2f + height / 2f;
+			var yi = 0.08f * this.height;
 			canvas.DrawImage(notation_img, new SKPoint(xi, yi), default_paint);
 		}
 
-		RenderSliders(canvas);
 		canvas.Restore();
         canvas.Flush();
 		
 		// Imgui rendering
-		ImGui.ShowDemoWindow();
+		// ImGui.ShowDemoWindow();
 		controller.Render();
+		RenderSliders(canvas);
 		ImGuiController.CheckGLError("End of frame");
 
         SwapBuffers();
@@ -264,13 +258,18 @@ public class Window : GameWindow
 
 	private void RenderSliders(SKCanvas canvas)
 	{
-		var _x = 40;
-		var _y = 40;
+		// var _x = 40;
+		// var _y = 40;
 		foreach(var slider in sliders)
 		{
-			canvas.DrawImage(slider.Img, new SKPoint(_x, _y), default_paint);
-			_y += slider.Img!.Width;
-			_y += 5;   // offset
+			// canvas.DrawImage(slider.Img, new SKPoint(_x, _y), default_paint);
+			// _y += slider.Img!.Width;
+			// _y += 5;   // offset
+			var vec = System.Numerics.Vector2.Zero;
+			if(ImGui.SliderFloat2(slider.Name, ref vec, slider.Min, slider.Max)) {
+				OnSliderValueChanged(new SliderValueChangedArgs(slider.Name, vec.X, vec.X));
+			}
+			
 		}
 	}
 }
