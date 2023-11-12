@@ -14,6 +14,8 @@ public class SKChart3D : IDisposable
 {
 	Bounds3D bounds;
 
+	// readonly object threadlock = new object();
+
 	SKPoint[] gridlines_points = new SKPoint[20 * 3];
 	
 	SKPoint[] axis_points = new SKPoint[6];
@@ -36,7 +38,8 @@ public class SKChart3D : IDisposable
 	
 
 	bool is_disposed = false;
-	List<Model3D> models = new();	
+	// List<Model3D> models = new();	
+	ThreadedList<Model3D> models = new();
 
 	public IList<Model3D> Models => models;
 
@@ -124,28 +127,53 @@ public class SKChart3D : IDisposable
 		Update();
 	}
 
-	public void DettachModel(Model3D model)
+	// public void AttachModelThreadLock(Model3D model)
+	// {
+	// 	lock(threadlock)
+	// 	{
+	// 		AttachModel(model);
+	// 	}
+	// }
+
+	public void DetachModel(Model3D model)
 	{
 		if(models.Contains(model))
 		{
 			model.Parent = null;
 			models.Remove(model);
 			UpdateBounds();
+			foreach(var _model in models) _model.Normalize(bounds);
 			Update();
 		}	
 	}
+
+	// public void DetachModelThreadLock(Model3D model)
+	// {
+	// 	lock(threadlock)
+	// 	{
+	// 		DetachModel(model);
+	// 	}
+	// }
 	
-	public void DettachModelAt(int index)
+	public void DetachModelAt(int index)
 	{
 		if(index < models.Count)
 		{
 			models[index].Parent = null;
 			models.RemoveAt(index);
 			UpdateBounds();
+			foreach(var _model in models) _model.Normalize(bounds);
 			Update();
 		}
 	}
 
+	// public void DetachModelAtThreadLock(int index)
+	// {
+	// 	lock(threadlock) 
+	// 	{
+	// 		DetachModelAt(index);
+	// 	}
+	// }
 	
 	public void UpdateBounds()
 	{

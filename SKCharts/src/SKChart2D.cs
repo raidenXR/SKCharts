@@ -13,6 +13,8 @@ namespace SKCharts;
 public class SKChart2D : IDisposable
 {
 	Bounds2D bounds;
+
+	// readonly object threadlock = new object();
 	
 	SKPoint[] gridlines_points = new SKPoint[20];
 	SKPoint[] axis_points = new SKPoint[4];
@@ -34,7 +36,8 @@ public class SKChart2D : IDisposable
 	
 
 	bool is_disposed = false;
-	List<Model2D> models = new();
+	// List<Model2D> models = new();
+	ThreadedList<Model2D> models = new();
 
 	public IList<Model2D> Models => models;
 
@@ -134,27 +137,53 @@ public class SKChart2D : IDisposable
 		Update();
 	}
 
-	public void DettachModel(Model2D model)
+	// public void AttachModelThreadLock(Model2D model)
+	// {
+	// 	lock(threadlock)
+	// 	{
+	// 		AttachModel(model);			
+	// 	}
+	// }
+
+	public void DetachModel(Model2D model)
 	{
 		if(models.Contains(model))
 		{
 			model.Parent = null;
 			models.Remove(model);
 			UpdateBounds();
+			foreach(var _model in models) _model.Normalize(bounds);
 			Update();
 		}
 	}
 
-	public void DettachModelAt(int index)
+	// public void DetachModelThreadLock(Model2D model)
+	// {
+	// 	lock(threadlock)
+	// 	{
+	// 		DetachModel(model);
+	// 	}
+	// }
+
+	public void DetachModelAt(int index)
 	{
 		if(index < models.Count)
 		{
 			models[index].Parent = null;
 			models.RemoveAt(index);
 			UpdateBounds();
+			foreach(var _model in models) _model.Normalize(bounds);
 			Update();
 		}
 	}
+
+	// public void DetachModelAtThreadLock(int index)
+	// {
+	// 	lock(threadlock)
+	// 	{
+	// 		DetachModelAt(index);
+	// 	}
+	// }
 
 	public void UpdateBounds()
 	{

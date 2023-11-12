@@ -244,6 +244,14 @@ public class Window : GameWindow
         SwapBuffers();
     }
 
+	public void Screenshot(string filename)
+	{
+		using var image = surface.Snapshot();
+		using var data = image.Encode(SKEncodedImageFormat.Png, 80);
+		using var fs = File.Create(filename);
+		data.SaveTo(fs);
+	}
+
 	protected override void OnTextInput(TextInputEventArgs e)
 	{
 		base.OnTextInput(e);
