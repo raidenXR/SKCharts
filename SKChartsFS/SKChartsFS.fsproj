@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>    
+    <LangVersion>preview</LangVersion>
+    <PublishAot>true</PublishAot>
+    <StripSymbols>true</StripSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="SKChartsFS.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="fonts/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.6" />  
+    <ProjectReference Include="..\SKCharts\SKCharts.csproj" />
+    <ProjectReference Include="..\SKCharts.OpenTK\SKCharts.OpenTK.csproj" />
+    <ProjectReference Include="..\..\Notation\Notation\Notation.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,4 +1,9 @@
 bin/
 obj/
 
+runtimes/
+fonts/
 *.png
+*.so
+*.dll
+*.dy
