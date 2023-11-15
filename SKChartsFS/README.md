@@ -14,5 +14,3 @@ Those native libs can be downloaded and extracted from the
 
 For font files any `.ttf` can be loaded, though as for now, `Notation.csproj` expects to read fonts from \ `KaTeX\fonts` directory for testing purposes  https://github.com/KaTeX/KaTeX \
 Clone the repo and copy `fonts` directory at `bin/Debug/dotnet7.0/`
-EDIT: (might a bug be introduced at Notation.csproj causing it to get into infinite loop). \
-Avoid calling the `.SetNotation()` method for now.
