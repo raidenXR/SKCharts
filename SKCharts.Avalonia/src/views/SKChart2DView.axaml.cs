@@ -19,7 +19,7 @@ public partial class SKChart2DView : UserControl
         InitializeComponent();
         this.SizeChanged += OnSizeChanged;
         
-        elevation_slider.ValueChanged += ElevationChanged;
+        // elevation_slider.ValueChanged += ElevationChanged;
         azimuth_slider.ValueChanged += AzimuthChanged;
     }
 

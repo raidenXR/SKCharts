@@ -13,6 +13,8 @@ using SKCharts;
 
 namespace SKCharts.Avalonia;
 
+
+
 public class MainWindow : Window {
 	public MainWindow(){}
 
@@ -120,4 +122,22 @@ public static class RendererApp
 
 }
 
+public static class Renderer
+{
+	public static Window OpenWindow(UserControl content)
+	{
+		var builder = AppBuilder.Configure<Application>().UsePlatformDetect();
+		builder.StartWithClassicDesktopLifetime(null, ShutdownMode.OnMainWindowClose);
 
+		if(Application.Current.ApplicationLifetime is ClassicDesktopStyleApplicationLifetime desktop)
+		{
+			var window = desktop.MainWindow ?? throw new NullReferenceException("not classic desktop application");
+			window.Content = content;
+			return window;
+		}
+		else
+		{
+			throw new NullReferenceException("main window is null");
+		}
+	}
+}

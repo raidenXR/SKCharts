@@ -10,14 +10,14 @@
       <Grid x:Name="grid" 
            ColumnDefinitions="200, *">
          <StackPanel Width="200">
-             <Label Content="Azimuth" />
+             <Label Content="change line" />
              <Slider x:Name="azimuth_slider"
                      Minimum="-90" 
                      Maximum="90" />
-             <Label Content="Elevation" />
-             <Slider x:Name="elevation_slider"
+             <!-- Label Content="Elevation" /  -->
+             <!-- Slider x:Name="elevation_slider"
                      Minimum="-180" 
-                     Maximum="180" />
+                     Maximum="180" /  -->
             <StackPanel x:Name="sidepanel" />
         </StackPanel>
         <Panel x:Name="panel" Grid.Column="1">

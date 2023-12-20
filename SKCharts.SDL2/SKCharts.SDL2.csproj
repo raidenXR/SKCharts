@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ImGui.NET" Version="1.89.9.3" />    
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
+    <ProjectReference Include="..\..\SDL2-CS\SDL2-CS.Core.csproj" />
+    <ProjectReference Include="..\SKCharts\SKCharts.csproj" />
+  </ItemGroup>
+  
+</Project>
