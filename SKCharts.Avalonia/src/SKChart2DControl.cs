@@ -56,6 +56,27 @@ public class SKChart2DControl : Control, IDisposable
 		is_disposed = true;
 	}
 
+	public ICollection<Model2D> Models => chart.Models;
+
+	public void AttachModel(Model2D model) 
+	{
+		Dispatcher.UIThread.Invoke(() => chart.AttachModel(model));
+	}
+
+	public void DetachModel(Model2D model)
+	{
+		Dispatcher.UIThread.Invoke(() => chart.DetachModel(model));		
+	}
+
+	public void DetachModelAt(int index)
+	{
+		Dispatcher.UIThread.Invoke(() => chart.DetachModelAt(index));
+	}
+
+	public void Update()
+	{
+		Dispatcher.UIThread.Invoke(() => chart.Update());
+	}
 
 	
 	public class CustomDrawOp : ICustomDrawOperation

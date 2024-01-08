@@ -57,6 +57,28 @@ public class SKChart3DControl : Control, IDisposable
 		is_disposed = true;
 	}
 
+	public ICollection<Model3D> Models => chart.Models;
+	
+	public void AttachModel(Model3D model) 
+	{
+		Dispatcher.UIThread.Invoke(() => chart.AttachModel(model));
+	}
+
+	public void DetachModel(Model3D model)
+	{
+		Dispatcher.UIThread.Invoke(() => chart.DetachModel(model));		
+	}
+
+	public void DetachModelAt(int index)
+	{
+		Dispatcher.UIThread.Invoke(() => chart.DetachModelAt(index));
+	}
+
+	public void Update()
+	{
+		Dispatcher.UIThread.Invoke(() => chart.Update());
+	}
+
     public class CustomDrawOp : ICustomDrawOperation
     {
         private readonly IImmutableGlyphRunReference? _noSkia;
