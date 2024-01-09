@@ -17,6 +17,7 @@ public partial class SKChart3DView : UserControl
     public SKChart3DView()
     {
         InitializeComponent();
+        SKChart3D.Demo(chart_control.Chart);
         this.KeyDown += KeyEnter_Command;
         this.SizeChanged += OnSizeChanged;
 

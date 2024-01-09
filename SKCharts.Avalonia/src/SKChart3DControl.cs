@@ -74,6 +74,11 @@ public class SKChart3DControl : Control, IDisposable
 		Dispatcher.UIThread.Invoke(() => chart.DetachModelAt(index));
 	}
 
+	public void NormalizeModels() 
+	{
+		chart.NormalizeModels();
+	}
+
 	public void Update()
 	{
 		Dispatcher.UIThread.Invoke(() => chart.Update());

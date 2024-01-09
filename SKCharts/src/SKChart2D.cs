@@ -65,36 +65,35 @@ public class SKChart2D : IDisposable
 	public double Width {get; set;} = 800;
 
 	public double Height {get; set;} = 600;
-	
+
 	public SKChart2D()
 	{
 		
+	}
+	
+	///<summary> initialize an SKChart2D instance for a demo </summary>
+	public static void Demo(SKChart2D demo)
+	{		
 		var rand = new Random();
-		// var vertices = new Vector2[100 - (100 % 3)];
-		var vertices = new Vector2[100];
-		for(int i = 0; i < vertices.Length; i += 1)
+		var x = new double[100];
+		var y1 = new double[100];
+		var y2 = new double[100];
+		
+		for (int i = 0; i < 100; i++)
 		{
-			// vertices[i + 0] = vertices[i - 1];
-			var vec = new Vector2(i, 90f * rand.NextSingle());
-			vertices[i + 0] = vec;
-			// vertices[i + 1] = vec;
+			x[i] = i;
+			y1[i] = 90 * rand.NextDouble();
+			y2[i] = 90 * Math.Sin(i);
 		}
-		var _paint0 = new SKPaint(){Color = SKColors.Green, StrokeWidth = 2, IsAntialias = true, TextSize = 18f};
-		var _model0 = Model2D.CreateLine(vertices, _paint0);
 
-		var vertices2 = new Vector2[100];
-		for(int i = 0; i < vertices2.Length - 0; i += 1)
-		{
-			vertices2[i + 0] = new Vector2(i,  90 * MathF.Sin(i));
-			// vertices[i + 1] = vertices[i + 0];
-		}
-		var _paint1 = new SKPaint(){Color = SKColors.Red, StrokeWidth = 4, IsAntialias = true, TextSize = 18f};
-		var _model1 = Model2D.CreatePoints(vertices2, _paint1);
+		var _model0 = Model2D.CreateLine(x, y1, SKColors.Green);
+		var _model1 = Model2D.CreatePoints(x, y2, SKColors.Red);		
+		_model1.Paint.StrokeWidth = 4f;
 		_model1.Name = "sin line";
 
-		AttachModel(_model0);
-		AttachModel(_model1);
-		Update();
+		demo.AttachModel(_model0);
+		demo.AttachModel(_model1);
+		demo.Update();
 	}
 
 	public SKChart2D(Model2D model) 
@@ -175,6 +174,13 @@ public class SKChart2D : IDisposable
 			foreach(var _model in models) _model.Normalize(bounds);
 			Update();
 		}
+	}
+
+	public void NormalizeModels()
+	{
+		UpdateBounds();
+		foreach (var _model in models) _model.Normalize(bounds);
+		Update();
 	}
 
 	// public void DetachModelAtThreadLock(int index)

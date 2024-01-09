@@ -37,6 +37,8 @@ public class SKChart2DControl : Control, IDisposable
 	public SKChart2DControl()
 	{
 		chart = new SKChart2D();
+		// chart.Models.Clear();
+
         var text = "Current rendering API is not Skia";
         var glyphs = text.Select(ch => Typeface.Default.GlyphTypeface.GetGlyph(ch)).ToArray();
         _noSkia = new GlyphRun(Typeface.Default.GlyphTypeface, 12, text.AsMemory(), glyphs);
@@ -71,6 +73,12 @@ public class SKChart2DControl : Control, IDisposable
 	public void DetachModelAt(int index)
 	{
 		Dispatcher.UIThread.Invoke(() => chart.DetachModelAt(index));
+	}
+
+	
+	public void NormalizeModels() 
+	{
+		chart.NormalizeModels();
 	}
 
 	public void Update()

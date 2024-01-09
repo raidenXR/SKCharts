@@ -93,6 +93,7 @@ public class Model2D : IDisposable
 	Bounds2D bounds;
 	SKColor single_color;
 	Chart2DType chart_type;
+	SKPaint paint;
 	bool is_disposed;
 	
 	public SKChart2D? Parent {get; set;}
@@ -124,7 +125,12 @@ public class Model2D : IDisposable
 			bounds = new Bounds2D(0, 1, 0, 1),
 			chart_type = Chart2DType.Line2D,
 			single_color = color,
-			Paint = null,
+			paint = new SKPaint{
+				StrokeWidth = 2f,
+				TextSize = 18f,
+				IsAntialias = true,
+				Color = color,
+			},
 		};			
 	}
 
@@ -152,7 +158,9 @@ public class Model2D : IDisposable
 			bounds = Bounds2D.GetBounds(vertices),
 			chart_type = Chart2DType.Line2D,
 			single_color = color,
-			Paint = new SKPaint{
+			paint = new SKPaint{
+				StrokeWidth = 2f,
+				TextSize = 18f,
 				IsAntialias = true,
 				Color = color,
 			},
@@ -171,7 +179,9 @@ public class Model2D : IDisposable
 			bounds = new Bounds2D(0, 1, 0, 1),
 			chart_type = Chart2DType.Points,
 			single_color = color,
-			Paint = new SKPaint{
+			paint = new SKPaint{
+				StrokeWidth = 2f,
+				TextSize = 18f,
 				IsAntialias = true,
 				Color = color,
 			},
@@ -198,88 +208,15 @@ public class Model2D : IDisposable
 			bounds = Bounds2D.GetBounds(vertices),
 			chart_type = Chart2DType.Points,
 			single_color = color,
-			Paint = new SKPaint{
+			paint = new SKPaint{
+				StrokeWidth = 2f,
+				TextSize = 18f,
 				IsAntialias = true,
 				Color = color,
 			},
 		};
-	}
+	}	
 
-
-	
-	[Obsolete]
-	public static Model2D CreateLine(double[] x, double[] y, uint color)
-	{
-		return CreateLine(x, y, new SKColor(color));
-	}
-
-	[Obsolete]
-	public static Model2D CreateLine(int capacity, SKPaint paint) 
-	{
-		int size = 2 * (capacity - 2);
-		
-		return new Model2D{
-			vertices = new Vector2[size],
-			vertices_norm = new Vector2[size],
-			points = new SKPoint[size],
-			colors = null,
-			indices = null,
-			bounds = new Bounds2D(0, 1, 0, 1),
-			chart_type = Chart2DType.Line2D,
-			single_color = SKColors.Black,
-			Paint = paint,
-		};	
-		
-	}
-
-	[Obsolete]
-	public static Model2D CreateLine(int capacity, uint color)
-	{
-		return CreateLine(capacity, new SKColor((uint)color));
-	}
-	
-	[Obsolete]
-	public static Model2D CreateLine(Vector2[] line, SKPaint paint)
-	{
-		var vertices = new Vector2[2 * (line.Length - 2)];
-		vertices[0] = line[0];
-		for(int i = 1, j = 1; i < vertices.Length - 1; i += 2, j += 1)
-		{
-			vertices[i + 0] = line[j];
-			vertices[i + 1] = line[j];
-		}
-		vertices[vertices.Length - 1] = line[line.Length - 1];
-	
-		return new Model2D
-		{
-			vertices = vertices,
-			vertices_norm = new Vector2[vertices.Length],
-			points = new SKPoint[vertices.Length],
-			colors = null,
-			indices = null,
-			bounds = Bounds2D.GetBounds(line),
-			chart_type = Chart2DType.Line2D,
-			single_color = SKColors.Black,
-			Paint = paint,
-		};
-	}
-	
-	[Obsolete]
-	public static Model2D CreatePoints(Vector2[] line, SKPaint paint)
-	{
-		return new Model2D
-		{
-			vertices = line,
-			vertices_norm = new Vector2[line.Length],
-			points = new SKPoint[line.Length],
-			colors = null,
-			indices = null,
-			bounds = Bounds2D.GetBounds(line),
-			chart_type = Chart2DType.Points,
-			single_color = SKColors.Black,
-			Paint = paint,
-		};
-	}
 
 
 	public Vector2[] Vertices => vertices;
@@ -298,7 +235,7 @@ public class Model2D : IDisposable
 
 	public Chart2DType ChartType => chart_type;
 
-	public SKPaint? Paint {get; set;}
+	public SKPaint? Paint => paint;
 
 	public string? Name {get; set;}
 
@@ -324,7 +261,7 @@ public class Model2D : IDisposable
 		Normalize(bounds);
 	}
 
-	public void CopyValues(ReadOnlySpan<double> x, ReadOnlySpan<double> y)
+	public void CopyLineValues(ReadOnlySpan<double> x, ReadOnlySpan<double> y)
 	{
 		Assert(x.Length == y.Length);
 		var N = x.Length;
@@ -336,6 +273,31 @@ public class Model2D : IDisposable
 			var vec = new Vector2((float)x[j], (float)y[j]);
 			vertices[i + 0] = vec;
 			vertices[i + 1] = vec;
+		}
+		vertices[vertices.Length - 1] = new Vector2((float)x[x.Length - 1], (float)y[y.Length - 1]);
+
+		for(int i = N; i < vertices.Length; i++)
+		{
+			vertices[i] = vertices[N - 1];
+		}
+
+		this.UpdateBounds();
+		
+		if(Parent != null)
+		{
+			Parent.UpdateBounds();
+			Parent.Update();
+		}
+	}
+
+	public void CopyPointsValues(ReadOnlySpan<double> x, ReadOnlySpan<double> y)
+	{
+		Assert(x.Length == y.Length);
+		var N = x.Length;
+				
+		for(int i = 0; i < N; i++)
+		{
+			vertices[i] = new Vector2((float)x[i], (float)y[i]);
 		}
 		vertices[vertices.Length - 1] = new Vector2((float)x[x.Length - 1], (float)y[y.Length - 1]);
 

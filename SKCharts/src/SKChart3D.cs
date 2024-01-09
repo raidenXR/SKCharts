@@ -72,17 +72,21 @@ public class SKChart3D : IDisposable
 
 	public Bounds3D BoundsBox => bounds;
 
-
-	public SKChart3D()
+	public SKChart3D() 
 	{
-		Colorbar = new Colorbar(this);
 		
+	}
+
+	public static void Demo(SKChart3D demo)
+	{
 		var _model0 = Model3D.CreateSurface(Sinc3D(out int w0, out int h0), w0, h0);
 		var _model1 = Model3D.CreateSurface(Peak3D(out int w1, out int h1), w1, h1);
-
 		// AttachModel(_model0);
-		AttachModel(_model1);
-		Update();
+
+		demo.Colorbar = new Colorbar(demo);
+		
+		demo.AttachModel(_model1);
+		demo.Update();
 	}
 
 	public SKChart3D(Model3D model)
@@ -174,6 +178,14 @@ public class SKChart3D : IDisposable
 	// 		DetachModelAt(index);
 	// 	}
 	// }
+
+	
+	public void NormalizeModels()
+	{
+		UpdateBounds();
+		foreach (var _model in models) _model.Normalize(bounds);
+		Update();
+	}
 	
 	public void UpdateBounds()
 	{

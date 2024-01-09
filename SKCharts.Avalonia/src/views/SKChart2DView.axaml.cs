@@ -17,6 +17,7 @@ public partial class SKChart2DView : UserControl
     public SKChart2DView()
     {
         InitializeComponent();
+        SKChart2D.Demo(chart_control.Chart);
         this.SizeChanged += OnSizeChanged;
         
         // elevation_slider.ValueChanged += ElevationChanged;
