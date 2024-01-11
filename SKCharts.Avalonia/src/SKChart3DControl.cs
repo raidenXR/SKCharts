@@ -57,7 +57,7 @@ public class SKChart3DControl : Control, IDisposable
 		is_disposed = true;
 	}
 
-	public ICollection<Model3D> Models => chart.Models;
+	public IList<Model3D> Models => chart.Models;
 	
 	public void AttachModel(Model3D model) 
 	{

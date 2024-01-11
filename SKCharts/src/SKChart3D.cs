@@ -43,6 +43,12 @@ public class SKChart3D : IDisposable
 
 	public IList<Model3D> Models => models;
 
+	public string XTitle {get; set;} = "X";
+
+	public string YTitle {get; set;} = "Y";
+
+	public string ZTitle {get; set;} = "Z";
+
 	// SKPaint fill;
 	// ColorBar colorbar;
 
@@ -562,9 +568,9 @@ public class SKChart3D : IDisposable
 			canvas.DrawText(label_vecs[i + 2].ToString("N3"), slice[i + 2].X, slice[i + 2].Y, black_paint);	
 		}
 		
-		canvas.DrawText("X", slice[len + 0].X, slice[len + 0].Y, black_paint);	
-		canvas.DrawText("Y", slice[len + 1].X, slice[len + 1].Y, black_paint);	
-		canvas.DrawText("Z", slice[len + 2].X, slice[len + 2].Y, black_paint);	
+		canvas.DrawText(XTitle, slice[len + 0].X, slice[len + 0].Y, black_paint);	
+		canvas.DrawText(YTitle, slice[len + 1].X, slice[len + 1].Y, black_paint);	
+		canvas.DrawText(ZTitle, slice[len + 2].X, slice[len + 2].Y, black_paint);	
 	}
 
 static void NormalizeVertices(Span<Vector3> vertices, ReadOnlySpan<Vector3> original, Bounds3D bounds)

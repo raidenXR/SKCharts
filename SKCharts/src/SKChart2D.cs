@@ -41,6 +41,10 @@ public class SKChart2D : IDisposable
 
 	public IList<Model2D> Models => models;
 
+	public string XTitle {get; set;} = "X";
+	
+	public string YTitle {get; set;} = "Y";
+
 	public Vector2 LegendPosition {get; set;}
 
 	// SKPaint fill;
@@ -418,8 +422,8 @@ public class SKChart2D : IDisposable
 			canvas.DrawText(label_vecs[i + 1].ToString("N3"), slice[i + 1].X, slice[i + 1].Y, black_paint);	
 		}
 		
-		canvas.DrawText("X", slice[len + 0].X, slice[len + 0].Y, black_paint);	
-		canvas.DrawText("Y", slice[len + 1].X, slice[len + 1].Y, black_paint);	
+		canvas.DrawText(XTitle, slice[len + 0].X, slice[len + 0].Y, black_paint);	
+		canvas.DrawText(YTitle, slice[len + 1].X, slice[len + 1].Y, black_paint);	
 	}
 	
     public void DrawLegend(SKCanvas canvas)

@@ -58,7 +58,7 @@ public class SKChart2DControl : Control, IDisposable
 		is_disposed = true;
 	}
 
-	public ICollection<Model2D> Models => chart.Models;
+	public IList<Model2D> Models => chart.Models;
 
 	public void AttachModel(Model2D model) 
 	{
