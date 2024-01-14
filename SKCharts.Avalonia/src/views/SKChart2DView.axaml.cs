@@ -69,13 +69,16 @@ public partial class SKChart2DView : UserControl
         {
             var random = new Random();
             var model = chart_control.Chart.Models.First();
-            var values = model.Vertices;
-            values[0].Y = 0.8f * (float)slider.Value;
+            // var values = model.Vertices;
+            var values = model.Yvalues;
+            // values[0].Y = 0.8f * (float)slider.Value;
+            values[0] = 0.8 * slider.Value;
             for(int i = 1; i < values.Length - 1; i += 2)
             {
-                var y = values[i].Y + 30 * random.NextSingle() * 0.1f * (float)slider.Value;
-                values[i + 0].Y = y;
-                values[i + 1].Y = y;
+                // var y = values[i].Y + 30 * random.NextSingle() * 0.1f * (float)slider.Value;
+                var y = values[i] + 30 * random.NextSingle() * 0.1 * slider.Value;
+                values[i + 0] = y;
+                values[i + 1] = y;
             }
             model.UpdateBounds();
             chart_control.Chart.UpdateBounds();

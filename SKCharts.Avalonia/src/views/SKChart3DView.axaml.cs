@@ -83,12 +83,15 @@ public partial class SKChart3DView : UserControl
         if(sender is Slider slider)
         {
             var model = chart_control.Chart.Models.First();
-            var vertices = model.Vertices;
+            // var vertices = model.Vertices;
+            var values = model.Zvalues;
             var random = new Random();
 
-            for(int i = 0; i < vertices.Length; i++)
+            // for(int i = 0; i < vertices.Length; i++)
+            for(int i = 0; i < values.Length; i++)
             {
-                vertices[i].Z += (0.5f * random.NextSingle() - 1f) + (float)slider.Value;
+                // vertices[i].Z += (0.5f * random.NextSingle() - 1f) + (float)slider.Value;
+                values[i] += (0.5 * random.NextSingle() - 1.0) + slider.Value;
             }
                         
             model.UpdateBounds();

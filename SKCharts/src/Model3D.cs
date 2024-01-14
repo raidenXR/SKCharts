@@ -70,6 +70,34 @@ public readonly struct Bounds3D
 		return new Bounds3D(xmin, xmax, ymin, ymax, zmin, zmax);
 	}
 
+	
+	public static Bounds3D GetBounds(double[] x, double[] y, double[] z)
+	{
+		Assert(x.Length == y.Length && z.Length == z.Length);
+	
+		var xmin = double.MaxValue;
+		var ymin = double.MaxValue;
+		var zmin = double.MaxValue;
+
+		var xmax = double.MinValue;
+		var ymax = double.MinValue;
+		var zmax = double.MinValue;
+
+		for(int i = 0; i < x.Length; i++)
+		{		
+			xmin = Math.Min(x[i], xmin);
+			xmax = Math.Max(x[i], xmax);
+
+			ymin = Math.Min(y[i], ymin);
+			ymax = Math.Max(y[i], ymax);
+			
+			zmin = Math.Min(z[i], zmin);
+			zmax = Math.Max(z[i], zmax);
+		}
+
+		return new Bounds3D(xmin, xmax, ymin, ymax, zmin, zmax);
+	}
+
 	public static Bounds3D GetBounds(Bounds3D a, Bounds3D b)
 	{
 		var xmin = Math.Min(a.Xmin, b.Xmin);
@@ -115,7 +143,11 @@ public readonly struct Bounds3D
 
 public class Model3D
 {
-	Vector3[] vertices;
+	// Vector3[] vertices;
+	double[] xvalues;
+	double[] yvalues;
+	double[] zvalues;
+	int vertices_count;
 	Vector3[] vertices_norm;
 	ushort[] indices;
 	SKPoint[] points;
@@ -131,9 +163,20 @@ public class Model3D
 
 	public static Model3D CreateSurface(Vector3[] vertices, int width, int height)
 	{
+		var xvalues = new double[vertices.Length];
+		var yvalues = new double[vertices.Length];
+		var zvalues = new double[vertices.Length];
+		int vertices_count = 0;
+
+		CopyValues(vertices, xvalues, yvalues, zvalues, ref vertices_count);
+
 		return new Model3D
 		{
-	        vertices = vertices,
+	        // vertices = vertices,
+			xvalues = xvalues,
+			yvalues = yvalues,
+			zvalues = zvalues,
+			vertices_count = vertices_count,
 			vertices_norm = new Vector3[vertices.Length],
 	        points   = new SKPoint[(width - 1) * (height - 1) * 4],
 	        colors   = new SKColor[(width - 1) * (height - 1) * 4],
@@ -150,7 +193,11 @@ public class Model3D
 		
 		return new Model3D
 		{
-	        vertices = new Vector3[capacity],
+	        // vertices = new Vector3[capacity],
+			xvalues = new double[capacity],
+			yvalues = new double[capacity],
+			zvalues = new double[capacity],
+			vertices_count = 0,
 			vertices_norm = new Vector3[capacity],
 	        points   = new SKPoint[(width - 1) * (height - 1) * 4],
 	        colors   = new SKColor[(width - 1) * (height - 1) * 4],
@@ -164,9 +211,20 @@ public class Model3D
 
 	public static Model3D CreateLine(Vector3[] line, SKColor color)
 	{
+		var xvalues = new double[line.Length];
+		var yvalues = new double[line.Length];
+		var zvalues = new double[line.Length];
+		int vertices_count = 0;
+
+		CopyValues(line, xvalues, yvalues, zvalues, ref vertices_count);
+
 		return new Model3D
 		{
-			vertices = line,
+			// vertices = line,
+			xvalues = xvalues,
+			yvalues = yvalues,
+			zvalues = zvalues,
+			vertices_count = vertices_count,
 			vertices_norm = new Vector3[line.Length],
 			points = new SKPoint[line.Length],
 			colors = null,
@@ -177,7 +235,14 @@ public class Model3D
 	}
 	
 
-	public Vector3[] Vertices => vertices!;
+	// public Vector3[] Vertices => vertices!;
+	public double[] Xvalues => xvalues;
+
+	public double[] Yvalues => yvalues;
+
+	public double[] Zvalues => zvalues;
+
+	public int VerticesCount => vertices_count;
 
 	public Vector3[] VerticesNorm => vertices_norm!;
 
@@ -203,33 +268,45 @@ public class Model3D
 	{
 		for(int i = 0; i < vertices_norm.Length; i++)
 		{
-			var vec = vertices[i];
-			var x = (vec.X - bounds.Xmin) / (bounds.Xmax - bounds.Xmin);
-			var y = (vec.Y - bounds.Ymin) / (bounds.Ymax - bounds.Ymin);
-			var z = (vec.Z - bounds.Zmin) / (bounds.Zmax - bounds.Zmin);
+			// var vec = vertices[i];
+			// var x = (vec.X - bounds.Xmin) / (bounds.Xmax - bounds.Xmin);
+			// var y = (vec.Y - bounds.Ymin) / (bounds.Ymax - bounds.Ymin);
+			// var z = (vec.Z - bounds.Zmin) / (bounds.Zmax - bounds.Zmin);
+			var x = (xvalues[i] - bounds.Xmin) / (bounds.Xmax - bounds.Xmin);
+			var y = (yvalues[i] - bounds.Ymin) / (bounds.Ymax - bounds.Ymin);
+			var z = (zvalues[i] - bounds.Zmin) / (bounds.Zmax - bounds.Zmin);
 			vertices_norm[i] = new Vector3((float)x, (float)y, (float)z);
 		}
 	}
 
 	public void UpdateBounds()
 	{
-		bounds = Bounds3D.GetBounds(vertices);
+		// bounds = Bounds3D.GetBounds(vertices);
+		bounds = Bounds3D.GetBounds(xvalues, yvalues, zvalues);
 		Normalize(bounds);
 	}	
 
 	public void CopyValues(ReadOnlySpan<Vector3> values)
 	{
-		if(values.Length > vertices.Length) 
+		// if(values.Length > vertices.Length) 
+		if(values.Length > vertices_norm.Length)
 			throw new IndexOutOfRangeException("values.Length is greater than vertices length");
 	
 		for(int i = 0; i < values.Length; i++)
 		{
-			vertices[i] =  values[i];
+			// vertices[i] =  values[i];
+			xvalues[i] = values[i].X;
+			yvalues[i] = values[i].Y;
+			zvalues[i] = values[i].Z;
 		}
 
-		for(int i = values.Length; i < vertices.Length; i++)
+		// for(int i = values.Length; i < vertices.Length; i++)
+		for(int i = values.Length; i < vertices_norm.Length; i++)
 		{
-			vertices[i] = values[values.Length - 1];
+			// vertices[i] = values[values.Length - 1];
+			xvalues[i] = values[values.Length - 1].X;			
+			yvalues[i] = values[values.Length - 1].Y;
+			zvalues[i] = values[values.Length - 1].Z;
 		}
 
 		this.UpdateBounds();
@@ -239,6 +316,18 @@ public class Model3D
 			Parent.UpdateBounds();
 			Parent.Update();
 		}
+	}
+
+	static void CopyValues(Vector3[] vertices, double[] x, double[] y, double[] z, ref int vertices_count)
+	{
+		for(int i = 0; i < vertices.Length; i++)
+		{
+			x[i] = vertices[i].X;
+			y[i] = vertices[i].Y;
+			z[i] = vertices[i].Z;
+		}
+
+		vertices_count = vertices.Length;
 	}
 }
 

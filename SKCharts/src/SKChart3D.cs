@@ -248,7 +248,7 @@ public class SKChart3D : IDisposable
 		int width  = model.W;
 		int height = model.H;
 		
-		var vertices = model.Vertices;
+		// var vertices = model.Vertices;
         var vertices_norm = model.VerticesNorm;
         var points   = model.Points;
         var colors   = model.Colors;
@@ -318,18 +318,19 @@ public class SKChart3D : IDisposable
 
     private void UpdateLine(Model3D model)
     {
-        var vertices  = model.Vertices;
+        // var vertices  = model.Vertices;
+		var vertices_norm = model.VerticesNorm;
         var points    = model.Points;
-		// var translate = Matrix4x4.CreateTranslation(0.5f, 0.5f, 0.5f);
-		// var scale     = Matrix4x4.CreateScale(0.5f, 0.5f, 0.5f);
-  //       var rotation  = AzimuthElevation(Camera.Elevation, Camera.Azimuth);
-		// var transform = translate * rotation * scale;
 		var transform = Camera.View;		
 		
-        for (int i = 0, v = 0; i < vertices.Length; i += 2, v += 2)
+        // for (int i = 0, v = 0; i < vertices.Length; i += 2, v += 2)
+		for(int i = 0; i < vertices_norm.Length; i += 2)
         {
-            points[v + 0] = Cast2D(Vector3.Transform(vertices[i + 0], transform));
-            points[v + 1] = Cast2D(Vector3.Transform(vertices[i + 1], transform));
+            // points[v + 0] = Cast2D(Vector3.Transform(vertices[i + 0], transform));
+            // points[v + 1] = Cast2D(Vector3.Transform(vertices[i + 1], transform));
+
+            points[i + 0] = Cast2D(Vector3.Transform(vertices_norm[i + 0], transform));
+            points[i + 1] = Cast2D(Vector3.Transform(vertices_norm[i + 1], transform));
         }
     }
 
@@ -573,7 +574,7 @@ public class SKChart3D : IDisposable
 		canvas.DrawText(ZTitle, slice[len + 2].X, slice[len + 2].Y, black_paint);	
 	}
 
-static void NormalizeVertices(Span<Vector3> vertices, ReadOnlySpan<Vector3> original, Bounds3D bounds)
+	static void NormalizeVertices(Span<Vector3> vertices, ReadOnlySpan<Vector3> original, Bounds3D bounds)
 	{
 		for(int i = 0; i < original.Length; i++)
 		{
