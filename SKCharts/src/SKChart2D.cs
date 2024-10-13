@@ -12,7 +12,7 @@ namespace SKCharts;
 
 public class SKChart2D : IDisposable
 {
-	Bounds2D bounds;
+	Bounds2D bounds = new Bounds2D(0f, 1f, 0f, 1f);
 
 	// readonly object threadlock = new object();
 	
@@ -42,8 +42,12 @@ public class SKChart2D : IDisposable
 	public IList<Model2D> Models => models;
 
 	public string XTitle {get; set;} = "X";
+
+	public SKImage XImg {get; set;} = null;
 	
 	public string YTitle {get; set;} = "Y";
+
+	public SKImage YImg {get; set;} = null;
 
 	public Vector2 LegendPosition {get; set;}
 
@@ -72,7 +76,7 @@ public class SKChart2D : IDisposable
 
 	public SKChart2D()
 	{
-		
+		Update();
 	}
 	
 	///<summary> initialize an SKChart2D instance for a demo </summary>
@@ -422,8 +426,15 @@ public class SKChart2D : IDisposable
 			canvas.DrawText(label_vecs[i + 1].ToString("N3"), slice[i + 1].X, slice[i + 1].Y, black_paint);	
 		}
 		
-		canvas.DrawText(XTitle, slice[len + 0].X, slice[len + 0].Y, black_paint);	
-		canvas.DrawText(YTitle, slice[len + 1].X, slice[len + 1].Y, black_paint);	
+		if (XImg != null)		
+			canvas.DrawImage(XImg, slice[len + 0].X, slice[len + 0].Y, black_paint);		
+		else
+			canvas.DrawText(XTitle, slice[len + 0].X, slice[len + 0].Y, black_paint);			
+		
+		if (YImg != null)
+			canvas.DrawImage(YImg, slice[len + 1].X, slice[len + 1].Y, black_paint);
+		else
+			canvas.DrawText(YTitle, slice[len + 1].X, slice[len + 1].Y, black_paint);	
 	}
 	
     public void DrawLegend(SKCanvas canvas)

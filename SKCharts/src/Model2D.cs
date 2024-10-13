@@ -166,7 +166,7 @@ public class Model2D : IDisposable
 		Assert(x.Length == y.Length);
 		
 		var xvalues = new double[2 * (x.Length - 2)];
-		var yvalues = new double[2 * (x.Length - 2)];
+		var yvalues = new double[2 * (y.Length - 2)];
 		var vertices_count = 0;
 		var size = xvalues.Length;
 		// var vertices = new Vector2[2 * (x.Length - 2)];
