@@ -165,8 +165,8 @@ public class Model2D : IDisposable
 	{
 		Assert(x.Length == y.Length);
 		
-		var xvalues = new double[2 * (x.Length - 2)];
-		var yvalues = new double[2 * (y.Length - 2)];
+		var xvalues = new double[2 * x.Length - 2];
+		var yvalues = new double[2 * y.Length - 2];
 		var vertices_count = 0;
 		var size = xvalues.Length;
 		// var vertices = new Vector2[2 * (x.Length - 2)];
@@ -332,16 +332,17 @@ public class Model2D : IDisposable
 	static void CopyLineValues(double[] x, double[] y, double[] xvalues, double[] yvalues, ref int vertices_count)
 	{
 		Assert(x.Length == y.Length);
-		var N = x.Length;
-		vertices_count = N;
+		var n = x.Length;
+		var N = (2 * n - 2);
+		vertices_count = x.Length;
 		// Assert(vertices.Length >= (2 * (N - 2)));
-		Assert(xvalues.Length >= (2 * (N - 2)));
+		Assert(xvalues.Length >= N);
 				
 		// vertices[0] = new Vector2((float)x[0], (float)y[0]);
 		xvalues[0] = x[0];
 		yvalues[0] = y[0];
 		// for(int i = 1, j = 1; j < N && i + 1 < vertices.Length; i += 2, j += 1)
-		for(int i = 1, j = 1; j < N && i + 1 < xvalues.Length; i += 2, j += 1)
+		for(int i = 1, j = 1; i + 1 < xvalues.Length && j + 1 < x.Length; i += 2, j += 1)
 		{
 			// var vec = new Vector2((float)x[j], (float)y[j]);
 			// vertices[i + 0] = vec;
