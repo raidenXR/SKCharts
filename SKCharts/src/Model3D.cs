@@ -57,14 +57,17 @@ public readonly struct Bounds3D
 
 		foreach(var vec in vertices)
 		{
-			xmin = MathF.Min(vec.X, xmin);
-			xmax = MathF.Max(vec.X, xmax);
+			var x_is_number = !float.IsNaN(vec.X);
+			xmin = x_is_number ? MathF.Min(vec.X, xmin) : xmin;
+			xmax = x_is_number ? MathF.Max(vec.X, xmax) : xmax;
 
-			ymin = MathF.Min(vec.Y, ymin);
-			ymax = MathF.Max(vec.Y, ymax);
-			
-			zmin = MathF.Min(vec.Z, zmin);
-			zmax = MathF.Max(vec.Z, zmax);
+			var y_is_number = !float.IsNaN(vec.Y);
+			ymin = y_is_number ? MathF.Min(vec.Y, ymin) : ymin;
+			ymax = y_is_number ? MathF.Max(vec.Y, ymax) : ymax;
+
+			var z_is_number = !float.IsNaN(vec.Z);
+			zmin = z_is_number ? MathF.Min(vec.Z, zmin) : zmin;
+			zmax = z_is_number ? MathF.Max(vec.Z, zmax) : zmax;
 		}
 
 		return new Bounds3D(xmin, xmax, ymin, ymax, zmin, zmax);
@@ -85,29 +88,48 @@ public readonly struct Bounds3D
 
 		for(int i = 0; i < x.Length; i++)
 		{		
-			xmin = Math.Min(x[i], xmin);
-			xmax = Math.Max(x[i], xmax);
+			var x_is_number = !double.IsNaN(x[i]);
+			xmin = x_is_number ? Math.Min(x[i], xmin): xmin;
+			xmax = x_is_number ? Math.Max(x[i], xmax): xmax;
 
-			ymin = Math.Min(y[i], ymin);
-			ymax = Math.Max(y[i], ymax);
+			var y_is_number = !double.IsNaN(y[i]);
+			ymin = y_is_number ? Math.Min(y[i], ymin) : ymin;
+			ymax = y_is_number ? Math.Max(y[i], ymax) : ymax;
 			
-			zmin = Math.Min(z[i], zmin);
-			zmax = Math.Max(z[i], zmax);
+			var z_is_number = !double.IsNaN(z[i]);
+			zmin = z_is_number ? Math.Min(z[i], zmin) : zmin;
+			zmax = z_is_number ? Math.Max(z[i], zmax) : zmax;
 		}
 
 		return new Bounds3D(xmin, xmax, ymin, ymax, zmin, zmax);
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static double SelectMin(double a, double b) 
+	{
+		if (double.IsNaN(a)) return b;
+		else if (double.IsNaN(b)) return a;
+		else return Math.Min(a, b);
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static double SelectMax(double a, double b) 
+	{
+		if (double.IsNaN(a)) return b;
+		else if (double.IsNaN(b)) return a;
+		else return Math.Max(a, b);
+	}
+
 	public static Bounds3D GetBounds(Bounds3D a, Bounds3D b)
 	{
-		var xmin = Math.Min(a.Xmin, b.Xmin);
-		var xmax = Math.Max(a.Xmax, b.Xmax);
+		var xmin = SelectMin(a.Xmin, b.Xmin);
+		var xmax = SelectMax(a.Xmax, b.Xmax);
 		
-		var ymin = Math.Min(a.Ymin, b.Ymin);
-		var ymax = Math.Max(a.Ymax, b.Ymax);
+		var ymin = SelectMin(a.Ymin, b.Ymin);
+		var ymax = SelectMax(a.Ymax, b.Ymax);
 
-		var zmin = Math.Min(a.Zmin, b.Zmin);
-		var zmax = Math.Max(a.Zmax, b.Zmax);
+		var zmin = SelectMin(a.Zmin, b.Zmin);
+		var zmax = SelectMax(a.Zmax, b.Zmax);
 		
 		return new Bounds3D(xmin, xmax, ymin, ymax, zmin, zmax);
 	}

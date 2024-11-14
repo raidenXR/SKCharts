@@ -45,11 +45,13 @@ public readonly struct Bounds2D
 
 		foreach(var vec in vertices)
 		{
-			xmin = MathF.Min(vec.X, xmin);
-			xmax = MathF.Max(vec.X, xmax);
+			var x_is_number = !float.IsNaN(vec.X);
+			xmin = x_is_number ? MathF.Min(vec.X, xmin) : xmin;
+			xmax = x_is_number ? MathF.Max(vec.X, xmax) : xmax;
 
-			ymin = MathF.Min(vec.Y, ymin);
-			ymax = MathF.Max(vec.Y, ymax);
+			var y_is_number = !float.IsNaN(vec.Y);
+			ymin = y_is_number ? MathF.Min(vec.Y, ymin) : ymin;
+			ymax = y_is_number ? MathF.Max(vec.Y, ymax) : ymax;
 		}
 
 		return new Bounds2D(xmin, xmax, ymin, ymax);
@@ -67,23 +69,41 @@ public readonly struct Bounds2D
 
 		for(int i = 0; i < x.Length; i++)
 		{
-			xmin = Math.Min(x[i], xmin);
-			xmax = Math.Max(x[i], xmax);
+			var x_is_number = !double.IsNaN(x[i]);
+			xmin = x_is_number ? Math.Min(x[i], xmin) : xmin;
+			xmax = x_is_number ? Math.Max(x[i], xmax) : xmax;
 
-			ymin = Math.Min(y[i], ymin);
-			ymax = Math.Max(y[i], ymax);
+			var y_is_number = !double.IsNaN(y[i]);
+			ymin = y_is_number ? Math.Min(y[i], ymin) : ymin;
+			ymax = y_is_number ? Math.Max(y[i], ymax) : ymax;
 		}
 
 		return new Bounds2D(xmin, xmax, ymin, ymax);
 	}
 
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static double SelectMin(double a, double b) 
+	{
+		if (double.IsNaN(a)) return b;
+		else if (double.IsNaN(b)) return a;
+		else return Math.Min(a, b);
+	}
+	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private static double SelectMax(double a, double b) 
+	{
+		if (double.IsNaN(a)) return b;
+		else if (double.IsNaN(b)) return a;
+		else return Math.Max(a, b);
+	}
+
 	public static Bounds2D GetBounds(Bounds2D a, Bounds2D b)
 	{
-		var xmin = Math.Min(a.Xmin, b.Xmin);
-		var xmax = Math.Max(a.Xmax, b.Xmax);
+		var xmin = SelectMin(a.Xmin, b.Xmin);
+		var xmax = SelectMax(a.Xmax, b.Xmax);
 
-		var ymin = Math.Min(a.Ymin, b.Ymin);
-		var ymax = Math.Max(a.Ymax, b.Ymax);
+		var ymin = SelectMin(a.Ymin, b.Ymin);
+		var ymax = SelectMax(a.Ymax, b.Ymax);
 		
 		return new Bounds2D(xmin, xmax, ymin, ymax);
 	}
