@@ -26,13 +26,22 @@ namespace SKCharts.Avalonia;
 
 public class SKChart2DControl : Control, IDisposable
 {
-	readonly SKChart2D chart;
+	SKChart2D chart;
 	readonly GlyphRun _noSkia;
 
 	bool is_disposed;
 
-	public SKChart2D Chart => chart;
+	public SKChart2D Chart 
+	{
+		get => chart;
+		set {chart = value;}
+	}
 	
+	// public SKChart2D Chart
+	// {
+	// 	get {return GetValue(ChartProperty);}
+	// 	set {SetValue(ChartProperty, value);}
+	// }
 	
 	public SKChart2DControl()
 	{
@@ -65,6 +74,11 @@ public class SKChart2DControl : Control, IDisposable
 		Dispatcher.UIThread.Invoke(() => chart.AttachModel(model));
 	}
 
+	// public SKImage SetXImg(SkiaSharp.SKImage img)
+	// {
+	// 	Dispatcher.UIThread.Invoke(() => chart.XImg = img)
+	// }
+
 	public void DetachModel(Model2D model)
 	{
 		Dispatcher.UIThread.Invoke(() => chart.DetachModel(model));		
@@ -86,6 +100,8 @@ public class SKChart2DControl : Control, IDisposable
 		Dispatcher.UIThread.Invoke(() => chart.Update());
 	}
 
+	public static readonly StyledProperty<SKChart2D> ChartProperty =
+		AvaloniaProperty.Register<SKChart2DControl, SKChart2D>(nameof(Chart));
 	
 	public class CustomDrawOp : ICustomDrawOperation
     {

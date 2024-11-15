@@ -27,21 +27,23 @@ public readonly struct Bounds2D
 
 	public Bounds2D(double xmin, double xmax, double ymin, double ymax)
 	{
-		Xmin = xmin;
-		Xmax = xmax;
-		Ymin = ymin;
-		Ymax = ymax;
+		Xmin = (xmin == xmax) ? xmin - 0.1 : xmin;
+		Xmax = (xmin == xmax) ? xmax + 0.1 : xmax;
+		Ymin = (ymin == ymax) ? ymin - 0.1 : ymin;
+		Ymax = (ymin == ymax) ? ymax + 0.1 : ymax;
 	}
 
-	public static Bounds2D NoneDefined => new Bounds2D(double.MaxValue, double.MinValue, double.MaxValue, double.MinValue); 
+	public static Bounds2D NoneDefined => new Bounds2D(
+		double.NaN, double.NaN, 
+		double.NaN, double.NaN); 
 
 	public static Bounds2D GetBounds(Vector2[] vertices)
 	{
-		var xmin = float.MaxValue;
-		var ymin = float.MaxValue;
+		var xmin = vertices[0].X;
+		var ymin = vertices[0].Y;
 
-		var xmax = float.MinValue;
-		var ymax = float.MinValue;
+		var xmax = vertices[0].X;
+		var ymax = vertices[0].Y;
 
 		foreach(var vec in vertices)
 		{
@@ -61,11 +63,11 @@ public readonly struct Bounds2D
 	{
 		Assert(x.Length == y.Length);
 	
-		var xmin = double.MaxValue;
-		var ymin = double.MaxValue;
+		var xmin = x[0];
+		var ymin = y[0];
 
-		var xmax = double.MinValue;
-		var ymax = double.MinValue;
+		var xmax = x[0];
+		var ymax = y[0];
 
 		for(int i = 0; i < x.Length; i++)
 		{

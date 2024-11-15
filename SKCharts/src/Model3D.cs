@@ -31,29 +31,29 @@ public readonly struct Bounds3D
 
 	public Bounds3D(double xmin, double xmax, double ymin, double ymax, double zmin, double zmax)
 	{
-		Xmin = xmin;
-		Xmax = xmax;
-		Ymin = ymin;
-		Ymax = ymax;
-		Zmin = zmin;
-		Zmax = zmax;
+		Xmin = (xmin == xmax) ? xmin - 0.1 : xmin;
+		Xmax = (xmin == xmax) ? xmax + 0.1 : xmax;
+		Ymin = (ymin == ymax) ? ymin - 0.1 : ymin;
+		Ymax = (ymin == ymax) ? ymax + 0.1 : ymax;
+		Zmin = (zmin == zmax) ? zmin - 0.1 : zmin;
+		Zmax = (zmin == zmax) ? zmax + 0.1 : zmax;
 	}
 
 	
 	public static Bounds3D NoneDefined => new Bounds3D(
-		double.MaxValue, double.MinValue, 
-		double.MaxValue, double.MinValue,
-		double.MaxValue, double.MinValue); 
+		double.NaN, double.NaN, 
+		double.NaN, double.NaN,
+		double.NaN, double.NaN); 
 
 	public static Bounds3D GetBounds(Vector3[] vertices)
 	{
-		var xmin = float.MaxValue;
-		var ymin = float.MaxValue;
-		var zmin = float.MaxValue;
+		var xmin = vertices[0].X;
+		var ymin = vertices[0].Y;
+		var zmin = vertices[0].Z;
 
-		var xmax = float.MinValue;
-		var ymax = float.MinValue;
-		var zmax = float.MinValue;
+		var xmax = vertices[0].X;
+		var ymax = vertices[0].Y;
+		var zmax = vertices[0].Z;
 
 		foreach(var vec in vertices)
 		{
@@ -78,13 +78,13 @@ public readonly struct Bounds3D
 	{
 		Assert(x.Length == y.Length && z.Length == z.Length);
 	
-		var xmin = double.MaxValue;
-		var ymin = double.MaxValue;
-		var zmin = double.MaxValue;
+		var xmin = x[0];
+		var ymin = y[0];
+		var zmin = z[0];
 
-		var xmax = double.MinValue;
-		var ymax = double.MinValue;
-		var zmax = double.MinValue;
+		var xmax = x[0];
+		var ymax = y[0];
+		var zmax = z[0];
 
 		for(int i = 0; i < x.Length; i++)
 		{		

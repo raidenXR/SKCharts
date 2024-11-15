@@ -43,11 +43,11 @@ public class SKChart2D : IDisposable
 
 	public string XTitle {get; set;} = "X";
 
-	public SKImage XImg {get; set;} = null;
+	public SKImage? XImg {get; set;} = null;
 	
 	public string YTitle {get; set;} = "Y";
 
-	public SKImage YImg {get; set;} = null;
+	public SKImage? YImg {get; set;} = null;
 
 	public Vector2 LegendPosition {get; set;}
 
